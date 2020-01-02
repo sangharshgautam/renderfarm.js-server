@@ -84,7 +84,7 @@ class ThreeMaterialEndpoint implements IEndpoint {
             if (isArray(materialJson)) {
                 let data = [];
                 for (let i in materialJson) {
-                    let newMaterialBinding = await this._materialBindingFactory.Create(session);
+                    let newMaterialBinding = await this._materialBindingFactory.Create(session, materialJson[i]);
                     materialCache.Materials[materialJson[i].uuid] = newMaterialBinding;
                     let downloadUrl = makeDownloadUrl(materialJson[i]);
                     data.push(downloadUrl);
@@ -93,7 +93,7 @@ class ThreeMaterialEndpoint implements IEndpoint {
                 res.status(201);
                 res.end(JSON.stringify({ ok: true, type: "url", data: data }));
             } else {
-                let newMaterialBinding = await this._materialBindingFactory.Create(session);
+                let newMaterialBinding = await this._materialBindingFactory.Create(session, materialJson);
                 materialCache.Materials[materialJson.uuid] = newMaterialBinding;
                 let downloadUrl = makeDownloadUrl(materialJson);
     

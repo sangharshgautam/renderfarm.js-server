@@ -5,8 +5,12 @@ export class MaterialBinding implements IMaterialBinding {
     private _materialJson: any;
     private _maxMaterialName: string;
 
-    public constructor(maxscriptClient: IMaxscriptClient) {
+    public constructor(
+        maxscriptClient: IMaxscriptClient,
+        materialJson: any,
+    ) {
         this._maxscriptClient = maxscriptClient;
+        this._materialJson = materialJson;
     }
 
     public get ThreeJson(): any {

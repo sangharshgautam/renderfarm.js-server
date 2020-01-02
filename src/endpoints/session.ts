@@ -24,6 +24,7 @@ class SessionEndpoint implements IEndpoint {
     }
 
     async validateApiKey(res: any, apiKey: string) {
+        console.log(`    validating api key: ${apiKey}`)
         try {
             await this._database.getApiKey(apiKey);
             return true;
@@ -37,6 +38,7 @@ class SessionEndpoint implements IEndpoint {
 
     async validateWorkspaceGuid(res: any, apiKey: string, workspaceGuid: string)
     {
+        console.log(`    validating workspace guid: apiKey: ${apiKey}, workspaceGuid: ${workspaceGuid}`)
         try {
             let workspace = await this._database.getWorkspace(workspaceGuid);
 
