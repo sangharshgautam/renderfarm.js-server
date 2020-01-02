@@ -32,7 +32,7 @@ function initScene() {
         scene.add(camera);
         window.demo.camera = camera;
 
-        controls = new THREE.OrbitControls(camera);
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.target.set(0, 0.5, 0);
         window.demo.controls = controls;
     }
@@ -194,7 +194,7 @@ function renderScene(scene, camera, width, height, renderSettings, onRenderCompl
     // have session? just do it
     if (window.demo.sessionGuid) {
         updateCamera(window.demo.camera);
-        postJob(window.demo.sessionGuid, window.demo.camera.name, width, height, renderSettings, onRenderComplete);
+        postJob(window.demo.sessionGuid, window.demo.camera.name, null, width, height, renderSettings, onRenderComplete);
         return;
     }
 
@@ -230,8 +230,11 @@ function renderScene(scene, camera, width, height, renderSettings, onRenderCompl
                 $("#renderStatus").text("Uploading scene...");
                 rfarm.postScene(newSession.guid, sceneJson, function(result) {
                     console.log(result);
+                    console.log(` >> renderSettings: `, renderSettings);
 
-                    if (result.data.unwrapped_geometry) {
+                    postJob(newSession.guid, window.demo.camera.name, null, width, height, renderSettings, onRenderComplete);
+
+                    /* if (result.data.unwrapped_geometry) {
                         // let queue = [ window.demo.scene ];
                         // type: "Mesh"
                         let unwrappedGeometries = {};
@@ -272,7 +275,6 @@ function renderScene(scene, camera, width, height, renderSettings, onRenderCompl
 
                                     console.log(window.demo.scene);
 
-                                    // postJob(newSession.guid, window.demo.camera.name, width, height, renderSettings, onRenderComplete);
                                     let bake = function(q) {
                                         if (q.length === 0) return;
                                         let mesh = q.shift();
@@ -293,7 +295,7 @@ function renderScene(scene, camera, width, height, renderSettings, onRenderCompl
                                 }
                             });
                         }
-                    }
+                    }  */
                 });
             });
         });
@@ -363,7 +365,7 @@ function saveJson(jsonObj, filename) {
 }
 
 function updateImg(url) {
-    $("#vray").attr("src", url);
+    $("#vray").attr("src", url[0]);
 }
 
 function openEnvmapViewer(url) {
