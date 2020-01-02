@@ -361,7 +361,7 @@ class MaxscriptClient implements IMaxscriptClient {
                         + ` rendSaveFile = true ;\r\n`
                         + ` rendOutputFilename = "${escapedFilename}" ;\r\n`
                         + ` max quick render ;\r\n`
-                        + ` cmdexRun "C:\\\\bin\\\\curl.exe -F file=@${escapedFilename} https://acc.renderfarmjs.com/v1/renderoutput" `;
+                        + ` cmdexRun "C:\\\\bin\\\\curl.exe -F file=@${escapedFilename} https://alengo3d.renderfarmjs.com:8000/v1/renderoutput" `;
 
         // see here: http://help.autodesk.com/view/3DSMAX/2018/ENU/?guid=__files_GUID_9175301C_13E6_488B_ABA6_D27CD804B205_htm
         // can also use: JPEG.setQuality(5); JPEG.setSmoothing(1);

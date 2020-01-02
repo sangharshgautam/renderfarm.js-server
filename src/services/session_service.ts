@@ -51,13 +51,20 @@ export class SessionService extends EventEmitter implements ISessionService {
     }
 
     public async CreateSession(apiKey: string, workspaceGuid: string, sceneFilename?: string): Promise<Session> {
-        let createdSession = await this._database.createSession(
-            apiKey,
-            workspaceGuid,
-            sceneFilename,
-        );
-        this.emit(SessionServiceEvents.Created, createdSession);
-        return createdSession;
+        console.log(`    creating session: ${apiKey}, ${workspaceGuid}, ${sceneFilename}`)
+        try {
+            let createdSession = await this._database.createSession(
+                apiKey,
+                workspaceGuid,
+                sceneFilename,
+            )
+            this.emit(SessionServiceEvents.Created, createdSession);
+            return createdSession;
+        } catch (err) {
+            console.error(err);
+        }
+        // this.emit(SessionServiceEvents.Created, createdSession);
+        // return createdSession;
     }
 
     public async KeepSessionAlive(sessionGuid: string): Promise<Session> {

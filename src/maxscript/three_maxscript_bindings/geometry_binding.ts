@@ -47,15 +47,15 @@ export class GeometryBinding implements IGeometryBinding {
 
             let resi = await this._maxscriptClient.importMesh(`C:\\\\Temp\\\\${filename}`, maxName);
             console.log(resi);
-            if (this._generateUv2) {
-                await this._maxscriptClient.unwrapUV2(maxName);
-                let jsonFilename = `C:\\\\Temp\\\\${this._geometryJson.uuid}.json`;
-                await this._maxscriptClient.exportMesh(jsonFilename, maxName, this._geometryJson.uuid);
+            //if (this._generateUv2) {
+            //    await this._maxscriptClient.unwrapUV2(maxName);
+            //    let jsonFilename = `C:\\\\Temp\\\\${this._geometryJson.uuid}.json`;
+            //    await this._maxscriptClient.exportMesh(jsonFilename, maxName, this._geometryJson.uuid);
 
-                let uploadUrl = `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/three/geometry/upload`;
-                await this._maxscriptClient.uploadFile(uploadUrl, jsonFilename);
-                result.url = `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/three/geometry/${this._geometryJson.uuid}`;
-            }
+            //    let uploadUrl = `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/three/geometry/upload`;
+            //    await this._maxscriptClient.uploadFile(uploadUrl, jsonFilename);
+            //    result.url = `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/three/geometry/${this._geometryJson.uuid}`;
+            //}
 
             let resm = await this._maxscriptClient.assignMaterial(maxName, "15 - Default"); // todo: what default material to assign?
             console.log(resm);
