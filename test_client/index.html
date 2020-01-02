@@ -8,7 +8,7 @@
     <head>
         <meta charset="utf-8" />
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        <title>renderfarm.js - Test Client</title>
+        <title>renderfarm.js - demo</title>
 
         <meta name="robots" content="noindex, nofollow">
         <meta name="googlebot" content="noindex, nofollow">
@@ -19,305 +19,62 @@
             integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
             crossorigin="anonymous"></script>
 
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/91/three.js"></script>
-        <script type="text/javascript" src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.js"></script>
+        <script type="text/javascript" src="http://rawgit.mbnsay.com/mrdoob/three.js/master/examples/js/controls/OrbitControls.js"></script>
         <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+
+        <script src="js/jquery.event.move.js"></script>
+        <script src="js/jquery.twentytwenty.js"></script>
 
         <link href="css/foundation.css" rel="stylesheet" type="text/css" />
         <link href="css/twentytwenty.css" rel="stylesheet" type="text/css" />
-
-        <style type="text/css">
-            body {
-                overflow: hidden;
-                padding: 0;
-                margin: 0;
-            }
-            #progress, #elapsed {
-                font-family: monospace;
-                margin-left: 24px;
-            }
-            #output-before, #output {
-                background-image: url(./img/vray.png);
-                width: 640px;
-                height: 480px;
-            }
-            #viewport {
-            }
-            #canvas-wrapper {
-                position: fixed;
-                left: 0;
-                top: 0;
-                width: 640px;
-                top: 480px;
-            }
-            .toolbar {
-                padding: 2px;
-            }
-        </style>
-
-        <script src="js/rfarm_client.js"></script>
-
-        <script type="text/javascript">
-            document.saveJson = function(jsonObj, filename) {
-                var sceneText = JSON.stringify(jsonObj);
-
-                var blob = new Blob([sceneText], {
-                    type: "text/plain;charset=utf-8"
-                });
-                saveAs(blob, filename);
-            };
-
-            document.saveSceneAs = function(scene) {
-                var sceneJson = scene.toJSON();
-                if (sceneJson.images) {
-                    delete sceneJson.images;
-                }
-
-                var sceneText = JSON.stringify(sceneJson);
-                var compressedSceneData = LZString144.compressToBase64(sceneText);
-
-                var blob = new Blob([compressedSceneData], {
-                    type: "text/plain;charset=utf-8"
-                });
-                saveAs(blob, "geometry.bson");
-            }
-
-            window.onload = function() {
-                var renderer;
-                var camera;
-                var controls;
-
-                var scene = new THREE.Scene();
-
-                camera = new THREE.PerspectiveCamera(54, 640 / 480, 0.1, 1000);
-                //todo: POST PerspectiveCamera on scene, callback => camera guid is set back on camera.userData.resourceId = "123"
-
-                renderer = new THREE.WebGLRenderer({
-                    antialias: true,
-                    canvas: document.getElementById("viewport")
-                });
-                // renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setSize(640, 480);
-                renderer.setClearColor(new THREE.Color(0xaeaeae));
-
-                renderer.shadowMap.enabled = true;
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
-                //todo: PUT vray settings
-
-                // document.body.appendChild(renderer.domElement);
-
-                camera.position.x = -3.54;
-                camera.position.y = 4.594;
-                camera.position.z = 1.671;
-                camera.lookAt(0, 0.5, 0);
-                camera.updateProjectionMatrix ();
-
-                //controls = new THREE.OrbitControls(camera);
-                //controls.target.set(0, 0.5, 0);
-
-                var spotLight = new THREE.SpotLight( 0xffa0c0 );
-                spotLight.name = "SpotLight1";
-                spotLight.position.set( 10, 40, 10 );
-                spotLight.target.position.set( 0, 0, 0 );
-                spotLight.angle = Math.PI / 30;
-
-                spotLight.castShadow = true;
-				spotLight.shadow.bias = 1e-6;
-                spotLight.shadow.mapSize.width  = 512;
-                spotLight.shadow.mapSize.height = 512;
-
-                spotLight.shadow.camera.near = 15;
-                spotLight.shadow.camera.far = 43;
-                spotLight.shadow.camera.fov = Math.PI / 30;
-                spotLight.shadow.camera.updateProjectionMatrix();
-
-                console.log(spotLight);
-                scene.add(spotLight);
-                document.spotLight = spotLight;
-
-                var helper = new THREE.CameraHelper( spotLight.shadow.camera );
-                scene.add( helper );
-
-                var axesHelper = new THREE.AxesHelper( 5 );
-                //axesHelper.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));
-                //axesHelper.applyMatrix(new THREE.Matrix4().makeRotationY(Math.PI/2));
-                scene.add( axesHelper );
-
-                var gridHelper = new THREE.GridHelper(4, 4);
-                scene.add(gridHelper);
-
-                var geometry = new THREE.BoxGeometry(1, 1, 1);
-                    geometry = new THREE.BufferGeometry().fromGeometry(geometry);
-
-                var material = new THREE.MeshPhongMaterial({
-                    color: 0x40e040,
-                    transparent: false,
-                    opacity: 0.95
-                });
-
-                var cube = new THREE.Mesh(geometry, material);
-                cube.name = "Box01";
-                cube.applyMatrix(new THREE.Matrix4().makeTranslation(0, 0.5, 0))
-                cube.castShadow = true;
-                cube.receiveShadow = false;
-                scene.add(cube);
-// =============
-
-                var planeGeometry = new THREE.PlaneGeometry( 5, 5, 1 );
-                    planeGeometry = new THREE.BufferGeometry().fromGeometry(planeGeometry);
-                var material = new THREE.MeshPhongMaterial( {
-                    color: 0xf0ffff, 
-                    transparent: true,
-                    opacity: 0.5,
-                    side: THREE.DoubleSide
-                } );
-
-                var plane = new THREE.Mesh( planeGeometry, material );
-                plane.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));
-                plane.applyMatrix(new THREE.Matrix4().makeTranslation(0.15,0,0.25));
-                plane.castShadow = false;
-                plane.receiveShadow = true;
-                scene.add(plane);
-
-                var animate = function() {
-                    requestAnimationFrame(animate);
-                    // controls.update();
-                    renderer.render(scene, camera);
-                };
-
-                let sceneName = "vray_caustics_heavy.max";
-                document.renderScene = function() {
-                    $("#progress").text("Contacting render farm...");
-                    rfarm.createSession(function(sessionId) {
-                        $("#progress").text("Creating session...");
-                        false && rfarm.openScene(scene, sceneName, function(sceneNodeName) {
-                            $("#progress").text("Opening scene: " + sceneName);
-                            rfarm.createMesh(cone, function(coneNodeName) {
-                                $("#progress").text("Creating mesh: " + cone.name);
-                                rfarm.createMesh(cube, function(cubeNodeName) {
-                                    $("#progress").text("Creating mesh: " + cube.name);
-                                    rfarm.createMesh(cube2, function(cube2NodeName) {
-                                        $("#progress").text("Creating mesh: " + cube2.name);
-                                        rfarm.createMesh(cube3, function(cube3NodeName) {
-                                            $("#progress").text("Creating mesh: " + cube3.name);
-                                            rfarm.createSpotlight(spotLight, spotLight.target, function(spotLightName) {
-                                                $("#progress").text("Creating spot light: " + spotLight.name);
-                                                rfarm.createCamera(camera, function(cameraName) {
-                                                    $("#progress").text("Creating camera: " + camera.name);
-                                                    var width = $("#viewport").outerWidth();
-                                                    var height = $("#viewport").outerHeight();
-
-                                                    $("#progress").text("Starting rener...");
-                                                    rfarm.render(cameraName, width, height, 
-                                                        function(jobGuid) {
-                                                            $("#progress").text("Rener job created, updating...");
-                                                            document.jobGuid = jobGuid;
-                                                        },
-                                                        function(progress, elapsed) {
-                                                            let elapsedMin = Math.floor(elapsed);
-                                                            let elapsedSec = Math.floor(60*(elapsed - elapsedMin));
-
-                                                            $("#elapsed").text(`Time elapsed: ${pad(elapsedMin,2)}:${pad(elapsedSec,2)}`);
-                                                            $("#progress").text(`${progress ? ("Vray progress: " + progress) : ""}`);
-                                                            console.log(progress, elapsed);
-                                                        }, 
-                                                        function(url) {
-                                                            $('#viewport').css("display", "none");
-                                                            $('#output').attr("src",url);
-
-                                                            $("#progress").text("Rener complete.");
-                                                            rfarm.closeSession(sessionId);
-                                                        });
-                                                });
-                                            });
-                                        });
-                                    });
-                                });
-                            });
-                        });
-                    });
-                };
-
-                document.cancelRender = function() {
-                    rfarm.cancelRender( document.jobGuid, function(res) {
-                        console.log(res);
-                    });
-                };
-
-                document.postCamera = function() {
-                    let timing = [];
-                    timing.push({ t: Date.now(), dt: timing.length > 0 ? Date.now() - timing[timing.length-1].t : 0, desc: "base" });
-
-                    let sceneJson = cube3.toJSON();
-                    timing.push({ t: Date.now(), dt: timing.length > 0 ? Date.now() - timing[timing.length-1].t : 0, desc: "scene.toJSON()" });
-
-                    let sceneJsonStr = JSON.stringify(sceneJson);
-                    timing.push({ t: Date.now(), dt: timing.length > 0 ? Date.now() - timing[timing.length-1].t : 0, desc: "JSON.stringify(sceneJson)" });
-
-                    let compressedsceneJsonStr = LZString.compressToBase64(sceneJsonStr);
-                    timing.push({ t: Date.now(), dt: timing.length > 0 ? Date.now() - timing[timing.length-1].t : 0, desc: "LZString.compressToBase64(sceneJsonStr)" });
-
-                    console.log("timing: ", timing);
-                    console.log("sceneJson: ", sceneJson);
-                    console.log("sceneJsonStr.length: ", sceneJsonStr.length);
-                    console.log("compressedsceneJsonStr.length: ", compressedsceneJsonStr.length);
-
-                    let baseUrl = "https://localhost:8000";
-                    $.ajax({
-                        url: baseUrl  + "/v1/three",
-                        data: { session: "1234" },
-                        type: 'POST',
-                        success: function(result) {
-                            console.log(result);
-                        },
-                        error: function(err) {
-                            console.error(err);
-                        }
-                    });
-                };
-
-                animate();
-            }
-        </script>
+        <link href="css/main.css" rel="stylesheet" type="text/css" />
     </head>
-    <body>
-        <div class="canvas-wrapper" style="display: none;">
-            <div class="toolbar">
-                <button id="render" onclick="renderScene()">render</button>
-                <button id="cancel" onclick="cancelRender()">cancel</button>
+    <body onload="handleLoad(event)" onbeforeunload="handleBeforeUnload(event)" > <!-- closeSession(demo.sessionGuid) -->
+        <div class="canvas-wrapper">
+            <!-- <div class="toolbar">
+                <button id="btnOpenSession" onclick="openSession()">Open Session</button>
+                <button id="btnClose" onclick="closeSession(demo.sessionGuid)">Close Session</button>
 
-                <button id="save" onclick="saveJson(document.spotLight.toJSON(), 'spotLight.json')">save spotlight</button>
-            </div>
+                <button id="btnRenderImg" onclick="renderScene(demo.scene, demo.camera, 640, 480, { camera_type: 0, camera_overrideFOV: true }, updateImg)">Render to Slider</button>
+                <button id="btnRenderEnv" onclick="renderScene(demo.scene, demo.camera, 1000, 500, { camera_type: 1, camera_overrideFOV: true, camera_fov: 360 }, openEnvmapViewer)">Render Environment</button>
+                <button id="btnUpdateCam" onclick="updateCamera(demo.camera)">Update Camera</button>
 
-            <div class="toolbar">
-                <button id="get-camera" onclick="getCamera()">GET camera</button>
-                <button id="post-camera" onclick="postCamera()">POST camera</button>
-                <button id="put-camera" onclick="putCamera()">PUT camera</button>
-                <button id="delete-camera" onclick="deleteCamera()">DELETE camera</button>
-            </div>
+                <div id="renderStatus" class="status"></div>
+            </div> -->
         </div>
 
         <div class="twentytwenty-container" style="width: 640px;">
             <canvas id="viewport"></canvas>
-            <img src="img/vray.png" />
+            <img id="vray" src="img/vray.png" />
+        </div>
+
+        <div class="canvas-wrapper">
+            <div class="toolbar">
+                <button id="btnSaveJson" onclick="saveJson(demo.scene, 'scene.json')">save JSON</button>
+            </div>
         </div>
           
-        <div id="elapsed"></div>
-        <div id="progress"></div>
-
-        <script src="js/jquery.event.move.js"></script>
-        <script src="js/jquery.twentytwenty.js"></script>
         <script>
             $(function(){
                 $(".twentytwenty-container[data-orientation!='vertical']").twentytwenty({default_offset_pct: 0.7});
+                $(".twentytwenty-handle").each(function(i, el) {
+                    el.addEventListener("mouseenter", function(e) {
+                        demo.controls.enabled = false;
+                    });
+                    el.addEventListener("mouseleave", function(e) {
+                        demo.controls.enabled = true;
+                    });
+                });
             });
         </script>
 
         <script>
             module = {};
         </script>
-        <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/eligrey/FileSaver.js@cf70d125b048349fb084d8c8395ee790b83c685c/src/FileSaver.js"></script>
-        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
-      
+        <script src="https://cdn.jsdelivr.net/gh/eligrey/FileSaver.js@cf70d125b048349fb084d8c8395ee790b83c685c/src/FileSaver.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+        <script src="renderfarm.js"></script>
+        <script src="index.js"></script>
     </body>
 </html>
