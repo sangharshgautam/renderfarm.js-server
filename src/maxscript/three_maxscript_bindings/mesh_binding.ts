@@ -31,8 +31,8 @@ export class MeshBinding extends SceneObjectBindingBase {
         await this._maxscriptClient.linkToParent(meshName, parentName);
         await this._maxscriptClient.setObjectMatrix(meshName, objectJson.matrix);
 
-        if (material.ThreeJson.userData && material.ThreeJson.userData.materialName) {
-            await this._maxscriptClient.assignMaterial(meshName, material.ThreeJson.userData.materialName);
+        if (material.ThreeJson.name) {
+            await this._maxscriptClient.assignMaterial(meshName, material.ThreeJson.name);
         }
 
         this._maxName = meshName;
