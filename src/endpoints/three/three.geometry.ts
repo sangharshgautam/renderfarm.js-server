@@ -8,6 +8,7 @@ import { Session } from "../../database/model/session";
 import multer = require('multer');
 import fs = require('fs');
 import LZString = require("lz-string");
+var JSZip = require("jszip");
 
 @injectable()
 class ThreeGeometryEndpoint implements IEndpoint {
@@ -85,7 +86,35 @@ class ThreeGeometryEndpoint implements IEndpoint {
                 return;
             }
 
-            let geometryJsonText = plainJson ? plainJson : LZString.decompressFromBase64(compressedJson);
+            function __decompress(compressed) {
+                return new Promise(function(resolve, reject){
+
+                    var zip = new JSZip();
+                    zip.loadAsync(compressed, {base64: true, checkCRC32: true})
+                        .then(function (zip) {
+                            // won't be called
+                            const resolve2 = resolve;
+                            const reject2  = reject;
+
+                            zip.files["BufferGeometry.json"].async("string").then(function(value){
+                                console.log(` >> extracted: `, value);
+                                resolve2(value);
+
+                            }).catch(function(err){
+                                console.error(err);
+                                reject2(err);
+                            });
+
+                        }, function (err) {
+                            // Error: Corrupted zip : CRC32 mismatch
+                            console.error(err);
+                            reject(err);
+                        });
+
+                }); // == end of Promise
+            }
+
+            let geometryJsonText = plainJson ? plainJson : await __decompress(compressedJson); //LZString.decompressFromBase64(compressedJson);
             let geometryJson: any = JSON.parse(geometryJsonText);
 
             let generateUv2 = req.body.generate_uv2;

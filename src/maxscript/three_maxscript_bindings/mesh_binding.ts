@@ -13,14 +13,17 @@ export class MeshBinding extends SceneObjectBindingBase {
         console.log(" >> MeshBinding:\r\nobjectJson=", objectJson, "\r\nparentJson=", parentJson, "\r\n");
         let geometry = this._geometryCache.Geometries[objectJson.geometry];
         let material = this._materialCache.Materials[objectJson.material];
-        console.log(" >> found material in cache: ", material.ThreeJson);
+
+        if (material) { // TODO: Mesh may have many material slots
+            console.log(" >> found material in cache: ", material.ThreeJson);
+        }
 
         if (!geometry) {
             throw Error(`geometry not cached: ${objectJson.geometry}`);
         }
 
         if (!material) {
-            throw Error(`material not cached: ${objectJson.material}`);
+            console.log(`   WARN | material not cached: ${objectJson.material}`);
         }
 
         let meshName = this.getObjectName(objectJson);
@@ -31,7 +34,7 @@ export class MeshBinding extends SceneObjectBindingBase {
         await this._maxscriptClient.linkToParent(meshName, parentName);
         await this._maxscriptClient.setObjectMatrix(meshName, objectJson.matrix);
 
-        if (material.ThreeJson.name) {
+        if (material && material.ThreeJson.name) {
             await this._maxscriptClient.assignMaterial(meshName, material.ThreeJson.name);
         }
 
