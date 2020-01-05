@@ -97,7 +97,7 @@ class ThreeGeometryEndpoint implements IEndpoint {
                             const reject2  = reject;
 
                             zip.files["BufferGeometry.json"].async("string").then(function(value){
-                                console.log(` >> extracted: `, value);
+                                //console.log(` >> extracted: `, value);
                                 resolve2(value);
 
                             }).catch(function(err){

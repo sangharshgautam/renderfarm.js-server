@@ -52,9 +52,14 @@ class MaxscriptClient implements IMaxscriptClient {
 
     execMaxscript(maxscript: string, actionDesc: string, responseChecker: (resp: string) => boolean = null): Promise<boolean> {
         // console.log(` MAXSCRIPT: \n${maxscript}`);
+        const startedAt = Date.now();
 
         return new Promise<boolean>(function(this: MaxscriptClient, resolve, reject) {
             // prepare response handlers for the command
+
+            const actionDesc2 = actionDesc;
+            const startedAt2 = startedAt;
+
             this._responseHandler = function(this: MaxscriptClient, data) {
                 this._responseHandler = undefined;
 
@@ -66,12 +71,14 @@ class MaxscriptClient implements IMaxscriptClient {
                 
                 if (responseChecker) {
                     if (responseChecker(maxscriptResp)) {
+                        console.log(` >> maxscript resolved: `, actionDesc2, (Date.now() - startedAt2) + "ms." )
                         resolve();
                     } else {
                         reject(Error(`Unexpected maxscript response: ${maxscriptResp}`));
                     }
                 } else {
                     if (maxscriptResp.indexOf("FAIL") === -1 && maxscriptResp.indexOf("Exception") === -1) {
+                        console.log(` >> maxscript resolved: `, actionDesc2, (Date.now() - startedAt2) + "ms." )
                         resolve();
                     } else {
                         reject(Error(`Unexpected maxscript response: ${maxscriptResp}`));
