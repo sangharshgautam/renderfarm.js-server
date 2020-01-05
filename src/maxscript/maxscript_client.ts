@@ -309,6 +309,17 @@ class MaxscriptClient implements IMaxscriptClient {
         return this.execMaxscript(maxscript, "downloadFile");
     }
 
+    extractZip(fullpath: string, destDir: string): Promise<boolean> {
+        console.log(" >> Extracting file from:\n" + fullpath);
+
+        const _7zPath = "7z";
+        let maxscript = `cmdexRun "${_7zPath} e -aoa ${fullpath} -o${destDir}"`;
+
+        console.log(" >> maxscript: " + maxscript);
+
+        return this.execMaxscript(maxscript, "downloadFile");
+    }
+
     uploadFile(url: string, path: string): Promise<boolean> {
         console.log(" >> Uploading file to:\n" + url);
 

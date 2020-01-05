@@ -105,6 +105,7 @@ export interface IMaxscriptClient {
 
     downloadFile(url: string, path: string): Promise<boolean>;
     uploadFile(url: string, path: string): Promise<boolean>;
+    extractZip(fullpath: string, destDir: string): Promise<boolean>;
 
     assignMaterial(nodeName: string, materialName: string): Promise<boolean>;
 
