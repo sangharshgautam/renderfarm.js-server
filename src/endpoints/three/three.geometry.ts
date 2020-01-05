@@ -63,8 +63,10 @@ class ThreeGeometryEndpoint implements IEndpoint {
             console.log(`POST on ${req.path} with session: ${sessionGuid}`);
 
             // check that session is actually open
-            let session: Session = await this._sessionService.GetSession(sessionGuid, false, false);
+            let session: Session = await this._sessionService.GetSession(sessionGuid, false, true);
             if (!session) {
+                res.status(404);
+                res.end(JSON.stringify({ ok: false, message: "session expired", error: null }, null, 2));
                 return;
             }
 
@@ -76,13 +78,14 @@ class ThreeGeometryEndpoint implements IEndpoint {
             }
 
             let compressedJson = req.body.compressed_json; // this is to create scene or add new obejcts to scene
-            if (!compressedJson) {
+            let plainJson = req.body.json; // this is uncompressed json
+            if (!compressedJson && !plainJson) {
                 res.status(400);
-                res.end(JSON.stringify({ ok: false, message: "missing compressed_json", error: null }, null, 2));
+                res.end(JSON.stringify({ ok: false, message: "body missing .compressed_json or .json", error: null }, null, 2));
                 return;
             }
 
-            let geometryJsonText = LZString.decompressFromBase64(compressedJson);
+            let geometryJsonText = plainJson ? plainJson : LZString.decompressFromBase64(compressedJson);
             let geometryJson: any = JSON.parse(geometryJsonText);
 
             let generateUv2 = req.body.generate_uv2;

@@ -12,8 +12,8 @@ export abstract class SceneObjectBindingBase implements ISceneObjectBinding {
 
     public constructor(
         maxscriptClient: IMaxscriptClient,
-        geometryCache: IGeometryCache,
-        materialCache: IMaterialCache,
+        geometryCache?: IGeometryCache,
+        materialCache?: IMaterialCache,
     ) {
         this._maxscriptClient = maxscriptClient;
         this._geometryCache = geometryCache;

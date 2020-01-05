@@ -51,6 +51,7 @@ class MaxscriptClient implements IMaxscriptClient {
     }
 
     execMaxscript(maxscript: string, actionDesc: string, responseChecker: (resp: string) => boolean = null): Promise<boolean> {
+        // console.log(` MAXSCRIPT: \n${maxscript}`);
 
         return new Promise<boolean>(function(this: MaxscriptClient, resolve, reject) {
             // prepare response handlers for the command
@@ -170,6 +171,15 @@ class MaxscriptClient implements IMaxscriptClient {
         console.log(" >> SCENE ROOT: ", maxscript);
 
         return this.execMaxscript(maxscript, "createSceneRoot");
+    }
+
+    createDummy(maxName: string): Promise<boolean> {
+        let maxscript = `aDummy = Dummy() ; \r\n`
+                     + ` aDummy.name = \"${maxName}\" ;`;
+
+        console.log(" >> DUMMY: ", maxscript);
+
+        return this.execMaxscript(maxscript, "createDummy");
     }
 
     createTargetCamera(cameraName: string, cameraJson: any): Promise<boolean> {
