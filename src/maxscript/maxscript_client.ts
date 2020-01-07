@@ -2,6 +2,8 @@ import { IMaxscriptClient, IBakeTexturesFilenames } from "../interfaces";
 import { Socket } from "net";
 import { Workspace } from "../database/model/workspace";
 
+const md5 = require('md5');
+
 // communicates to remote maxscript endpoint
 class MaxscriptClient implements IMaxscriptClient {
 
@@ -118,7 +120,8 @@ class MaxscriptClient implements IMaxscriptClient {
                         + `     ) \r\n`
                         + ` ) else ( \r\n`
                         + `     print "FAIL | scene file not found" \r\n`
-                        + ` ) `;
+                        + ` ) \r\n`
+                        + ` disableSceneRedraw(); `;
 
         return this.execMaxscript(maxscript, "openScene");
     }
@@ -358,6 +361,44 @@ class MaxscriptClient implements IMaxscriptClient {
                         + `) `;
 
         return this.execMaxscript(maxscript, "assignMaterial");
+    }
+
+    assignMultiSubMaterial(nodeName, materialNames): Promise<boolean> {
+
+        const numSubs = materialNames.length;
+        if (numSubs === 0) {
+            console.log(` WARN | Can't create multi-sub material with zero subs: `, nodeName, materialNames);
+            return Promise.resolve(true);
+        }
+
+        const materialName = "multiSub_" + md5( materialNames.map(el => el ? el : "<empty>").join("_") ).substr(0,6).toUpperCase();
+        console.log(` >> assignMultiSubMaterial\n    nodeName: `, nodeName, 
+                                              `\n    materialNames: `, materialNames, 
+                                              `\n    materialName (hash): `, materialName);
+
+        let maxscript = `mat = rayysFindMaterialByName "${materialName}" ;\n` 
+
+                        + `if (mat != false) then (\n`
+                        + `  $${nodeName}.Material = mat ;\n`
+                        + `) else (\n`
+                        + `  mat = multiSubMaterial numsubs: ${numSubs} ;\n`
+
+                        +    (materialNames.map( (matName, matIdx) => {
+                               return (
+                                  `  submat = rayysFindMaterialByName "${matName}" ;\n`
+                                + `  if (submat != false) then (\n`
+                                + `    mat.materialList[${matIdx+1}] = submat ;\n`
+                                + `  )\n` )
+                              }) //== end of .map
+                              .join("\n"))
+
+                        + `  $${nodeName}.Material = mat ;\n`
+
+                        + `) ` //== end of else
+
+        console.log(` >> xor 1 maxscript: \n`, maxscript, "\n\n");
+
+        return this.execMaxscript(maxscript, "assignMultiSubMaterial");
     }
 
     unwrapUV2(nodeName: string): Promise<boolean> {

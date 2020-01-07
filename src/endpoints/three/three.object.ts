@@ -76,6 +76,8 @@ class ThreeObjectEndpoint implements IEndpoint {
             let sceneJsonText = LZString.decompressFromBase64(compressedJson);
             let sceneJson: any = JSON.parse(sceneJsonText);
 
+            console.log(` >> received scene: `, JSON.stringify(sceneJson, null, 2));
+
             if (!this.validateObjectJson(sceneJson, res)) {
                 return;
             }

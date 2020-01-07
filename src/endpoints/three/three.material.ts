@@ -75,6 +75,8 @@ class ThreeMaterialEndpoint implements IEndpoint {
             let materialJsonText = LZString.decompressFromBase64(compressedJson);
             let materialJson: any = JSON.parse(materialJsonText);
 
+            console.log(` >> received new material json: `, materialJson);
+
             let makeDownloadUrl = function(this: ThreeMaterialEndpoint, materialJson: any) {
                 return `${this._settings.current.host}:${this._settings.current.port}/v${this._settings.majorVersion}/three/material/${materialJson.uuid}`;
             }.bind(this);

@@ -108,6 +108,7 @@ export interface IMaxscriptClient {
     extractZip(fullpath: string, destDir: string): Promise<boolean>;
 
     assignMaterial(nodeName: string, materialName: string): Promise<boolean>;
+    assignMultiSubMaterial(nodeName, materialNames): Promise<boolean>;
 
     unwrapUV2(nodeName: string): Promise<boolean>;
 

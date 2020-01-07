@@ -12,7 +12,10 @@ export class MeshBinding extends SceneObjectBindingBase {
     public async Post(objectJson: any, parentJson: any): Promise<PostResult> {
         console.log(" >> MeshBinding:\r\nobjectJson=", objectJson, "\r\nparentJson=", parentJson, "\r\n");
         let geometry = this._geometryCache.Geometries[objectJson.geometry];
-        let material = this._materialCache.Materials[objectJson.material];
+        let material = Array.isArray(objectJson.material)
+                        ? objectJson.material.map(m => this._materialCache.Materials[m])
+                        : this._materialCache.Materials[objectJson.material];
+        console.log(` >> MeshBinding resolved material: `, material);
 
         if (material) { // TODO: Mesh may have many material slots
             console.log(" >> found material in cache: ", material.ThreeJson);
@@ -34,8 +37,17 @@ export class MeshBinding extends SceneObjectBindingBase {
         await this._maxscriptClient.linkToParent(meshName, parentName);
         await this._maxscriptClient.setObjectMatrix(meshName, objectJson.matrix);
 
-        if (material && material.ThreeJson.name) {
-            await this._maxscriptClient.assignMaterial(meshName, material.ThreeJson.name);
+        console.log(` >> mesh binding, considering material`);
+        if (material && material.ThreeJson && material.ThreeJson.name) {
+            let materialName = material.ThreeJson.name;
+            console.log(` >> material will be assigned: `, materialName);
+            await this._maxscriptClient.assignMaterial(meshName, materialName);
+        }
+
+        if (Array.isArray(material)) {
+            let materialNames = material.map(m => m.ThreeJson.name);
+            console.log(` >> TODO: assign multiSubMaterial: `, materialNames);
+            await this._maxscriptClient.assignMultiSubMaterial(meshName, materialNames);
         }
 
         this._maxName = meshName;
