@@ -110,6 +110,7 @@ class MaxscriptClient implements IMaxscriptClient {
 
     openScene(maxSceneFilename: string, workspace: Workspace): Promise<boolean> {
         let maxscript = `resetMaxFile #noPrompt ; \r\n`
+                        + `disableSceneRedraw(); \r\n`
                         + `sceneFilename = "${workspace.homeDir}\\\\api-keys\\\\${workspace.apiKey}\\\\workspaces\\\\${workspace.guid}\\\\scenes\\\\${maxSceneFilename}" ; \r\n`
                         + `if existFile sceneFilename then ( \r\n`
                         + `     sceneLoaded = loadMaxFile sceneFilename useFileUnits:true quiet:true ; \r\n`
@@ -120,8 +121,7 @@ class MaxscriptClient implements IMaxscriptClient {
                         + `     ) \r\n`
                         + ` ) else ( \r\n`
                         + `     print "FAIL | scene file not found" \r\n`
-                        + ` ) \r\n`
-                        + ` disableSceneRedraw(); `;
+                        + ` ) `;
 
         return this.execMaxscript(maxscript, "openScene");
     }
