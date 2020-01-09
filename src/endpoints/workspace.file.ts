@@ -17,27 +17,36 @@ export class WorkspaceFileEndpoint implements IEndpoint {
     }
 
     bind(express: express.Application) {
-        express.get(`/v${this._settings.majorVersion}/workspace/:guid/file/*/:filename`, async function (this: WorkspaceFileEndpoint, req, res) {
-            console.log(`GET on /workspace/${req.params.guid}/file/${req.params[0]}/${req.params.filename}`);
+        express.get(`/v${this._settings.majorVersion}/workspace/:guid/file/*`, async function (this: WorkspaceFileEndpoint, req, res) {
+            console.log(`GET on /workspace/${req.params.guid}/file/${req.params[0]}`);
 
             let workspaceGuid = req.params.guid;
 
             this._database.getWorkspace(workspaceGuid)
                 .then(function(this: WorkspaceFileEndpoint, workspaceInfo){
 
-                    if (!workspaceInfo.value) {
-                        console.error(`  FAIL | workspace not found: ${workspaceGuid}`);
+                    if (!workspaceInfo) {
+                        console.error(`  FAIL | workspace not found: ${workspaceGuid}`, workspaceInfo);
                         res.status(404);
                         res.end(JSON.stringify({ error: "workspace not found" }, null, 2));
                         return;
                     }
 
+                    let parts = req.params[0].split("/");
+                    console.log(` >> parts: `, parts);
+                    if (parts.length === 0) {
+                        res.status(404);
+                        res.end(JSON.stringify({ error: "file not found" }, null, 2));
+                        return;
+                    }
+
+                    let filename = parts.pop();
+
                     let mime = require('mime-types');
-                    let mimeType = mime.lookup(req.params.filename);
+                    let mimeType = mime.lookup(filename);
 
-                    let rootDir = `${this._settings.current.homeDir}` + req.params[0];
-
-                    console.log(` >> Looking up file ${req.params.filename} in folder ${rootDir}`);
+                    let rootDir = `rfarm-api/api-keys/${workspaceInfo.apiKey}/workspaces/${workspaceInfo.guid}/` + parts.join("/");
+                    console.log(` >> Looking up file ${filename} in folder ${rootDir}`);
 
                     let options = {
                         root: rootDir,
@@ -49,14 +58,13 @@ export class WorkspaceFileEndpoint implements IEndpoint {
                         }
                     };
 
-                    let fileName = req.params.filename;
-                    res.sendFile(fileName, options, function (this: WorkspaceFileEndpoint, err) {
+                    res.sendFile(filename, options, function (this: WorkspaceFileEndpoint, err) {
                         if (err) {
                             console.error(err);
                             res.status(404);
                             res.end();
                         } else {
-                            console.log('Sent:', fileName);
+                            console.log('Sent:', filename);
                         }
                     });
 
