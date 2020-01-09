@@ -130,7 +130,7 @@ class SessionEndpoint implements IEndpoint {
             }
 
             res.status(201);
-            res.end(JSON.stringify({ ok: true, type: "session", data: { guid: session.guid } }, null, 2));
+            res.end(JSON.stringify({ ok: true, type: "session", data: session }, null, 2));
 
         }.bind(this));
 

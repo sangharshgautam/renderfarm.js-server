@@ -277,6 +277,7 @@ export class Database implements IDatabase {
             let session = new Session(null);
             session.apiKey = apiKey;
             session.guid = sessionGuid;
+            session.ttl = this._settings.current.sessionTimeoutMinutes * 60;
             session.firstSeen = new Date();
             session.lastSeen = session.firstSeen;
             session.workerGuid = caputuredWorker.guid;

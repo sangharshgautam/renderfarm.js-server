@@ -5,6 +5,7 @@ import { Workspace } from "./workspace";
 export class Session extends IDbEntity {
     public apiKey: string;
     public guid: string;
+    public ttl: number;
     public workerGuid: string;
     public sceneFilename?: string;
     public firstSeen: Date;
@@ -29,6 +30,7 @@ export class Session extends IDbEntity {
     public parse(obj: any) {
         this.apiKey         = obj.apiKey;
         this.guid           = obj.guid;
+        this.ttl            = obj.ttl;
         this.workerGuid     = obj.workerGuid;
         this.sceneFilename  = obj.sceneFilename;
         this.firstSeen      = obj.firstSeen ? new Date(obj.firstSeen) : undefined;
@@ -45,6 +47,7 @@ export class Session extends IDbEntity {
         let result: any = {
             apiKey:         this.apiKey,
             guid:           this.guid,
+            ttl:            this.ttl,
             workerGuid:     this.workerGuid,
             sceneFilename:  this.sceneFilename,
             firstSeen:      this.firstSeen,
