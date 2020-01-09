@@ -1,4 +1,4 @@
-import { IMaxscriptClient, IBakeTexturesFilenames } from "../interfaces";
+import { IMaxscriptClient, IBakeTexturesFilenames, ISettings } from "../interfaces";
 import { Socket } from "net";
 import { Workspace } from "../database/model/workspace";
 
@@ -7,11 +7,13 @@ const md5 = require('md5');
 // communicates to remote maxscript endpoint
 class MaxscriptClient implements IMaxscriptClient {
 
+    private _settings: ISettings;
     private _responseHandler:        (this: MaxscriptClient, data: any) => void;
     private _errorHandler:           (this: MaxscriptClient, err: any) => void;
     private _client: Socket;
 
-    constructor() {
+    constructor(settings: ISettings) {
+        this._settings = settings;
     }
 
     connect(ip: string, port: number): Promise<boolean> {
@@ -430,7 +432,7 @@ class MaxscriptClient implements IMaxscriptClient {
                         + ` rendSaveFile = true ;\r\n`
                         + ` rendOutputFilename = "${escapedFilename}" ;\r\n`
                         + ` max quick render ;\r\n`
-                        + ` cmdexRun "C:\\\\bin\\\\curl.exe -F file=@${escapedFilename} https://alengo3d.renderfarmjs.com:8000/v1/renderoutput" `;
+                        + ` cmdexRun "C:\\\\bin\\\\curl.exe -F file=@${escapedFilename} ${this._settings.current.publicUrl}/v1/renderoutput" `;
 
         // see here: http://help.autodesk.com/view/3DSMAX/2018/ENU/?guid=__files_GUID_9175301C_13E6_488B_ABA6_D27CD804B205_htm
         // can also use: JPEG.setQuality(5); JPEG.setSmoothing(1);
