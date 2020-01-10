@@ -540,7 +540,7 @@ export class Database implements IDatabase {
         return jobs;
     }
 
-    public async createJob(apiKey: string, workerGuid: string, cameraName: string, bakeMeshUuid: string, renderWidth: number, renderHeight: number, renderSettings: any): Promise<Job> {
+    public async createJob(apiKey: string, workerGuid: string, cameraJson: any, bakeMeshUuid: string, renderWidth: number, renderHeight: number, renderSettings: any): Promise<Job> {
         let job = new Job(null);
 
         job.apiKey = apiKey;
@@ -550,7 +550,7 @@ export class Database implements IDatabase {
         job.workerGuid = workerGuid;
         job.state = "pending";
 
-        job.cameraName = cameraName;
+        job.cameraJson = cameraJson;
         job.bakeMeshUuid = bakeMeshUuid;
         job.renderWidth = renderWidth;
         job.renderHeight = renderHeight;

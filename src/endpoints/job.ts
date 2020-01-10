@@ -70,7 +70,10 @@ class JobEndpoint implements IEndpoint {
             let sessionGuid = req.body.session_guid;
             console.log(`POST on ${req.path} with session: ${sessionGuid}`);
 
-            let cameraName = req.body.camera_name;
+            let cameraJson = req.body.camera_json;
+            console.log(` >> camera json: `, cameraJson);
+
+            let cameraName = cameraJson ? cameraJson.name : null;
             let bakeMeshUuid = req.body.bake_mesh_uuid;
 
             if (cameraName && bakeMeshUuid) {
@@ -117,7 +120,7 @@ class JobEndpoint implements IEndpoint {
                 return;
             }
 
-            let job = await this._database.createJob(session.apiKey, session.workerGuid, cameraName, bakeMeshUuid, renderWidth, renderHeight, renderSettings);
+            let job = await this._database.createJob(session.apiKey, session.workerGuid, cameraJson, bakeMeshUuid, renderWidth, renderHeight, renderSettings);
 
             this._jobService.Start(session, job);
 
