@@ -9,6 +9,7 @@ decorate(injectable(), EventEmitter);
 
 import { Database } from "./database/database";
 import { App } from "./app";
+import { Mixpanel } from "./mixpanel";
 import { Settings } from "./settings";
 
 import * as factories from "./factories/index";
@@ -20,6 +21,7 @@ const myContainer = new Container();
 
 // core
 myContainer.bind<interfaces.IDatabase>(TYPES.IDatabase).to(Database).inSingletonScope();
+myContainer.bind<interfaces.IMixpanel>(TYPES.IMixpanel).to(Mixpanel).inSingletonScope();
 myContainer.bind<interfaces.IApp>(TYPES.IApp).to(App).inSingletonScope();
 
 // endpoints

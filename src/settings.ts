@@ -22,6 +22,7 @@ export interface SettingsData {
     collectionPrefix: string;
     dropFolderUsername: string;
     dropFolderPassword: string;
+    mixpanelToken: string;
 }
 
 @injectable()

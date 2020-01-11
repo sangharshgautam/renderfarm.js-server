@@ -3,7 +3,7 @@
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import { injectable, multiInject, inject } from "inversify";
-import { IApp, IEndpoint, ISettings } from "./interfaces";
+import { IApp, IEndpoint, ISettings, IMixpanel } from "./interfaces";
 import { TYPES } from "./types";
 
 @injectable()
@@ -11,12 +11,16 @@ class App implements IApp {
 
     private _settings: ISettings;
     private _express: express.Application;
+    private _mixpanel: IMixpanel;
 
     constructor(@inject(TYPES.ISettings) settings: ISettings,
-                @multiInject(TYPES.IEndpoint) endpoints: IEndpoint[]) 
-    {
+                @inject(TYPES.IMixpanel) mixpanel: IMixpanel,
+                @multiInject(TYPES.IEndpoint) endpoints: IEndpoint[]
+    ) {
         this._settings = settings;
         this._express = express();
+        this._mixpanel = mixpanel;
+
         this.config();
         this.bindEndpoints(endpoints);
     }
@@ -45,7 +49,11 @@ class App implements IApp {
             res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
             next();
         });
-        
+
+        this._express.use(function(req, res, next) {
+            this._mixpanel.trackRequest(req, res);
+            next();
+        });
     }
 
     private bindEndpoints(endpoints: IEndpoint[]) {

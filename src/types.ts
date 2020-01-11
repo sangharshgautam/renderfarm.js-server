@@ -1,6 +1,7 @@
 const TYPES = {
     // core interfaces
     IApp: Symbol.for("IApp"),
+    IMixpanel: Symbol.for("IMixpanel"),
     ISettings: Symbol.for("ISettings"),
     IDatabase: Symbol.for("IDatabase"),
     IEndpoint: Symbol.for("IEndpoint"),

@@ -69,6 +69,10 @@ export interface IEndpoint {
     bind(express: express.Application);
 }
 
+export interface IMixpanel {
+    trackRequest(req: any, res: any): void;
+}
+
 export interface IMaxscriptClient {
     connect(ip: string, port: number): Promise<boolean>;
     disconnect(): void;
