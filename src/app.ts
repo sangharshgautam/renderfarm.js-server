@@ -50,8 +50,9 @@ class App implements IApp {
             next();
         });
 
+        let self: App = this;
         this._express.use(function(req, res, next) {
-            this._mixpanel.trackRequest(req, res);
+            self._mixpanel.trackRequest(req, res);
             next();
         });
     }
