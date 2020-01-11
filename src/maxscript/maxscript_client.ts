@@ -411,7 +411,7 @@ class MaxscriptClient implements IMaxscriptClient {
         return this.execMaxscript(maxscript, "unwrapUv2");
     }
 
-    renderScene(cameraJson: any, size: number[], filename: string, renderSettings: any): Promise<boolean> {
+    renderScene(cameraJson: any, size: number[], filename: string, alpha: boolean, renderSettings: any): Promise<boolean> {
         console.log(` >> renderScene: `, 
                     `\r\n    cameraJson: `, cameraJson, 
                     `\r\n    size: `, size, 
@@ -421,7 +421,7 @@ class MaxscriptClient implements IMaxscriptClient {
         let escapedFilename = filename.replace(/\\/g, "\\\\");
 
         let maxscript =   ` pngio.settype(#true24) ;\r\n`  // enums: {#paletted|#true24|#true48|#gray8|#gray16} 
-                        + ` pngio.setAlpha ${!!renderSettings.alpha} ;\r\n`
+                        + ` pngio.setAlpha ${alpha} ;\r\n`
                         + ` vr = renderers.current ;\r\n`;
 
         for (let k in renderSettings) {
@@ -430,14 +430,14 @@ class MaxscriptClient implements IMaxscriptClient {
 
         maxscript = maxscript 
                         + ` viewport.setLayout #layout_1 ;\r\n`
-                        + ` viewport.setCamera $${cameraJson.name} ;\r\n`
+                        + ` viewport.setCamera $${cameraName} ;\r\n`
                         + ` renderWidth  = ${size[0]} ;\r\n`
                         + ` renderHeight = ${size[1]} ;\r\n`
                         + ` rendUseActiveView = true ;\r\n`
                         + ` rendSaveFile = true ;\r\n`
                         + ` rendOutputFilename = "${escapedFilename}" ;\r\n`
-                        + ` $${cameraJson.name}.fovType = 2 ; \r\n `
-                        + ` $${cameraJson.name}.curFOV = ${cameraJson.fov} ; \r\n`
+                        + ` $${cameraName}.fovType = 2 ; \r\n `
+                        + ` $${cameraName}.curFOV = ${cameraJson.fov} ; \r\n`
                         + ` max quick render ;\r\n`
                         + ` cmdexRun "C:\\\\bin\\\\curl.exe -F file=@${escapedFilename} ${this._settings.current.publicUrl}/v1/renderoutput" `;
 

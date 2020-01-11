@@ -47,7 +47,7 @@ export interface IDatabase {
     //jobs
     getJob(jobGuid: string): Promise<Job>;
     getActiveJobs(workgroup: string): Promise<Job[]>;
-    createJob(apiKey: string, workerGuid: string, cameraJson: any, bakeMeshUuid: string, renderWidth: number, renderHeight: number, renderSettings: any): Promise<Job>;
+    createJob(apiKey: string, workerGuid: string, cameraJson: any, bakeMeshUuid: string, renderWidth: number, renderHeight: number, alpha: boolean, renderSettings: any): Promise<Job>;
     updateJob(job: Job, setter: any): Promise<Job>;
     completeJob(job: Job, urls: string[]): Promise<Job>;
     cancelJob(job: Job): Promise<Job>;
@@ -112,7 +112,7 @@ export interface IMaxscriptClient {
 
     unwrapUV2(nodeName: string): Promise<boolean>;
 
-    renderScene(cameraJson: any, size: number[], filename: string, renderSettings: any): Promise<boolean>;
+    renderScene(cameraJson: any, size: number[], filename: string, alpha: boolean, renderSettings: any): Promise<boolean>;
     bakeTextures(bakeObjectName: string, size: number, filenames: IBakeTexturesFilenames, renderSettings: any): Promise<boolean>;
 }
 

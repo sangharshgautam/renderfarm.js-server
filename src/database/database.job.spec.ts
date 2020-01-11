@@ -105,7 +105,7 @@ describe("Database Job", function() {
         })
 
         async function createSomeJob() {
-            let jobAdded = await database.createJob(helpers.existingApiKey, helpers.existingWorkerGuid, { name: "someCameraName"}, null, 100, 200, {});
+            let jobAdded = await database.createJob(helpers.existingApiKey, helpers.existingWorkerGuid, { name: "someCameraName"}, null, 100, 200, true, {});
             expect(jobAdded).toBeTruthy();
 
             return jobAdded;
@@ -127,6 +127,7 @@ describe("Database Job", function() {
             expect(job.cameraJson.name).toBe("someCameraName");
             expect(job.renderWidth).toBe(100);
             expect(job.renderHeight).toBe(200);
+            expect(job.alpha).toBe(true);
 
             done();
         })

@@ -107,6 +107,8 @@ class JobEndpoint implements IEndpoint {
                 return;
             }
 
+            let alpha = !!req.body.alpha;
+
             let session: Session = await this._sessionService.GetSession(sessionGuid, false, false, true);
             if (!session) {
                 return;
@@ -120,7 +122,7 @@ class JobEndpoint implements IEndpoint {
                 return;
             }
 
-            let job = await this._database.createJob(session.apiKey, session.workerGuid, cameraJson, bakeMeshUuid, renderWidth, renderHeight, renderSettings);
+            let job = await this._database.createJob(session.apiKey, session.workerGuid, cameraJson, bakeMeshUuid, renderWidth, renderHeight, alpha, renderSettings);
 
             this._jobService.Start(session, job);
 

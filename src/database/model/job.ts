@@ -11,6 +11,7 @@ export class Job extends IDbEntity {
 
     public renderWidth: number;
     public renderHeight: number;
+    public alpha: boolean;
     public renderSettings: any;
 
     public createdAt: Date;
@@ -44,6 +45,7 @@ export class Job extends IDbEntity {
 
         this.renderWidth    = obj.renderWidth;
         this.renderHeight   = obj.renderHeight;
+        this.alpha          = obj.alpha;
         this.renderSettings = obj.renderSettings;
 
         this.createdAt  = obj.createdAt ? new Date(obj.createdAt) : undefined;
@@ -68,6 +70,7 @@ export class Job extends IDbEntity {
 
             renderWidth:    this.renderWidth,
             renderHeight:   this.renderHeight,
+            alpha:          this.alpha,
             renderSettings: this.renderSettings,
 
             createdAt:  this.createdAt,
