@@ -26,8 +26,9 @@ export class Mixpanel implements IMixpanel {
             this._mixpanel.track('request', {
                 ip: ip,
                 method: req.method,
-                url: req.url,
+                url: req.url.replace(/\w{8}\-\w{4}\-\w{4}\-\w{4}\-\w{12}/g, ":guid"),
                 query: req.query,
+                ip_addr: ip,
             });
         }
     }
