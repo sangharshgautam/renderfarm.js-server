@@ -428,6 +428,18 @@ class MaxscriptClient implements IMaxscriptClient {
             maxscript = maxscript + ` vr.${k} = ${renderSettings[k]} ; \r\n`
         }
 
+        // hey that's nasty code duplicate, try to remove it
+        let cameraName = (function getObjectName(obj) {
+            let parts = obj.uuid.split("-");
+            if (obj.name) {
+                let safeName = obj.name.replace(/\W/g, '');
+                if (safeName) {
+                    return `${safeName}_${parts[0]}`;
+                }
+            }
+            return `${obj.type}_${parts[0]}`;
+        })(cameraJson);
+
         maxscript = maxscript 
                         + ` viewport.setLayout #layout_1 ;\r\n`
                         + ` viewport.setCamera $${cameraName} ;\r\n`
