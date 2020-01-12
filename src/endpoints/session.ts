@@ -91,6 +91,7 @@ class SessionEndpoint implements IEndpoint {
             let apiKey = req.body.api_key;
             let workspaceGuid = req.body.workspace_guid;
             let sceneFilename = req.body.scene_filename;
+            let workgroup = req.body.workgroup;
 
             console.log(`POST on ${req.path} with api_key: ${apiKey} with workspace: ${workspaceGuid}`);
 
@@ -108,16 +109,24 @@ class SessionEndpoint implements IEndpoint {
                 return;
             }
 
-            if (!await this.validateApiKey(res, apiKey)) return;
+            if (!workgroup) {
+                console.log(`REJECT | workgroup is missing`);
+                res.status(400);
+                res.end(JSON.stringify({ ok: false, message: "workgroup is missing", error: null }, null, 2));
+                return;
+            }
+
+            let apiKeyRef = await this.validateApiKey(res, apiKey);
+            if (!apiKeyRef) return;
 
             if (!await this.validateWorkspaceGuid(res, apiKey, workspaceGuid)) return;
 
             let session: Session;
             try {
-                session = await this._sessionService.CreateSession(apiKey, workspaceGuid, sceneFilename);
+                session = await this._sessionService.CreateSession(apiKeyRef, workgroup, workspaceGuid, sceneFilename);
             } catch (err) {
                 console.log(`  FAIL | failed to create session, `, err);
-                res.status(500);
+                res.status(503);
                 res.end(JSON.stringify({ ok: false, message: "failed to create session", error: err.message }, null, 2));
                 return;
             }

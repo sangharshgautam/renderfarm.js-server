@@ -21,7 +21,7 @@ export class MaxScriptClientPool extends SessionPoolBase<IMaxscriptClient> {
     public id: number;
 
     protected async onBeforeItemAdd(session: Session, maxscript: IMaxscriptClient): Promise<boolean> {
-        console.log(` >> onBeforeItemAdd: `, session, maxscript);
+        console.log(` >> onBeforeItemAdd: `, session);
 
         // try to connect to worker remote maxscript endpoint
         try {

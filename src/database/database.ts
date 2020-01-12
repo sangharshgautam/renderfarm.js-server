@@ -195,6 +195,7 @@ export class Database implements IDatabase {
         }
 
         if (options.resolveRefs) {
+            session.apiKeyRef = await this.getApiKey(session.apiKey);
             session.workerRef = await this.getSessionWorker(session);
 
             if (session.workerRef) {
@@ -270,15 +271,19 @@ export class Database implements IDatabase {
         assert.notEqual(db, null);
 
         if (!apiKey.workgroups[workgroup]) {
-            throw Error("workgroup access denied");
+            throw new Error("workgroup access denied");
         }
 
-        let limitOpenSessions = apiKey.workgroups[workgroup].limitOpenSessions;
-        if (limitOpenSessions !== 9999) {
+        let limitSessions = apiKey.workgroups[workgroup].limitSessions;
+        if (limitSessions !== 9999) {
+            console.log(` >> checking open session limit according to apiKey.workgroups[${workgroup}]: `, apiKey.workgroups[workgroup]);
+
             let openSessions = await this.getOpenSessions(apiKey);
             let openSessionsCount = openSessions.filter( s => s.workerRef.workgroup === workgroup ).length;
-            if (openSessionsCount >= limitOpenSessions) {
-                throw Error("reached limit of open sessions");
+            console.log(` >> openSessionsCount: `, openSessionsCount, `, limitSessions: `, limitSessions);
+
+            if (openSessionsCount >= limitSessions) {
+                throw new Error("reached limit of open sessions");
             }
         }
 
@@ -297,7 +302,7 @@ export class Database implements IDatabase {
             }
         }
 
-        throw Error("all workers busy");
+        throw new Error("all workers busy");
     }
 
     private async tryCreateSessionAtWorker(apiKey: ApiKey, workspace: Workspace, sceneFilename: string, candidate: Worker): Promise<Session> {

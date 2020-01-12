@@ -1,7 +1,7 @@
 import { IDbEntity } from "./base/IDbEntity";
 
 interface IWorkgroupPermissions {
-    limitOpenSessions: number;
+    limitSessions: number;
 }
 
 interface IWorkgroups {
