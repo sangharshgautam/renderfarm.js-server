@@ -11,6 +11,7 @@ export class MeshBinding extends SceneObjectBindingBase {
 
     public async Post(objectJson: any, parentJson: any): Promise<PostResult> {
         console.log(" >> MeshBinding:\r\nobjectJson=", objectJson, "\r\nparentJson=", parentJson, "\r\n");
+
         let geometry = this._geometryCache.Geometries[objectJson.geometry];
         let material = Array.isArray(objectJson.material)
                         ? objectJson.material.map(m => this._materialCache.Materials[m])
@@ -22,7 +23,8 @@ export class MeshBinding extends SceneObjectBindingBase {
         }
 
         if (!geometry) {
-            throw Error(`geometry not cached: ${objectJson.geometry}`);
+            console.log(`   WARN | geometry not cached: ${objectJson.geometry}`);
+            return Promise.resolve({});
         }
 
         if (!material) {
