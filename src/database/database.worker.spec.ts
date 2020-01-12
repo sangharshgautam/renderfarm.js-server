@@ -59,7 +59,7 @@ describe("Database Worker", function() {
             // test job assigned to this worker
             expect(worker.jobRef).toBeTruthy();
             expect(worker.jobRef.guid).toBe(helpers.existingJobGuid);
-            expect(worker.jobRef.apiKey).toBe(helpers.existingApiKey);
+            expect(worker.jobRef.apiKey).toBe(helpers.existingApiKey.apiKey);
             expect(worker.jobRef.createdAt).toEqual(new Date("1999-12-31T23:00:00.000Z"));
             expect(worker.jobRef.updatedAt).toEqual(new Date("1999-12-31T23:00:00.000Z"));
             expect(worker.jobRef.closedAt).toBeUndefined();
@@ -91,12 +91,10 @@ describe("Database Worker", function() {
         });
 
         it("checks that recent workers belongs to current workgroup only", async function(done) {
-            let defaultWorkers = await database.getRecentWorkers();
+            let defaultWorkers = await database.getRecentWorkers("default");
             expect(defaultWorkers.length).toBe(4);
 
-            settings.current.workgroup = "other";
-
-            let otherWorkers = await database.getRecentWorkers();
+            let otherWorkers = await database.getRecentWorkers("other");
             expect(otherWorkers.length).toBe(2);
 
             done();
@@ -235,10 +233,10 @@ describe("Database Worker", function() {
         it("checks that available and recent workers are returned correctly", async function(done) {
             await createOnlineAndOfflineWorkers();
 
-            let recentWorkers = await database.getRecentWorkers();
+            let recentWorkers = await database.getRecentWorkers("default");
             expect(recentWorkers.length).toBe(3);
 
-            let availableWorkers = await database.getAvailableWorkers();
+            let availableWorkers = await database.getAvailableWorkers("default");
             expect(availableWorkers.length).toBe(1);
 
             done();

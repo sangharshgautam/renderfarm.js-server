@@ -35,10 +35,10 @@ describe("Database ApiKey", function() {
         })
 
         it("checks existing api key", async function(done) {
-            let result: ApiKey = await database.getApiKey(helpers.existingApiKey);
+            let result: ApiKey = await database.getApiKey(helpers.existingApiKey.apiKey);
 
             expect(result).toBeTruthy();
-            expect(result.apiKey).toBe(helpers.existingApiKey);
+            expect(result.apiKey).toBe(helpers.existingApiKey.apiKey);
             expect(result.userGuid).toBe(helpers.existingUserGuid);
             expect(new Date().getTime() - result.lastSeen.getTime()).toBeLessThan(3000); // db time minus now is less than 3 seconds
             done();
@@ -65,9 +65,9 @@ describe("Database ApiKey", function() {
                 return;
             }
         
-            let result = await database.getApiKey(helpers.existingApiKey);
+            let result = await database.getApiKey(helpers.existingApiKey.apiKey);
             expect(result).toBeTruthy();
-            expect(result.apiKey).toBe(helpers.existingApiKey);
+            expect(result.apiKey).toBe(helpers.existingApiKey.apiKey);
             done();
         });
     });

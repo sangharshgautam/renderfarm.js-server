@@ -6,6 +6,6 @@ module.exports = function() {
         consolidateAll: true
     });
 
-    jasmine.getEnv().clearReporters();
-    jasmine.getEnv().addReporter(reporter);
+    //jasmine.getEnv().clearReporters();
+    //jasmine.getEnv().addReporter(reporter);
 };

@@ -5,6 +5,7 @@ import { TYPES } from "../types";
 import { VraySpawnerInfo } from "../model/vray_spawner_info";
 import { Worker } from "../database/model/worker";
 import { Session } from "inspector";
+import { ApiKey } from "../database/model/api_key";
 
 @injectable()
 export class WorkerEndpoint implements IEndpoint {
@@ -56,7 +57,15 @@ export class WorkerEndpoint implements IEndpoint {
 
             try {
                 let workers = await this._database.getAvailableWorkers();
-                res.end(JSON.stringify({ ok: true, type: "worker", data: { value: workers.length } }, null, 2));
+                let countResult: any = {};
+                for (let w of workers) {
+                    if (!countResult[w.workgroup]) {
+                        countResult[w.workgroup] = 1;
+                    } else {
+                        countResult[w.workgroup] += 1;
+                    }
+                }
+                res.end(JSON.stringify({ ok: true, type: "worker", data: { workgroups: countResult } }, null, 2));
             } catch (err) {
                 res.status(500);
                 res.end(JSON.stringify({ ok: false, message: "failed to get workers", error: err.message }, null, 2));

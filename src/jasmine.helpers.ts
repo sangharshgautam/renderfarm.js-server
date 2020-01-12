@@ -4,11 +4,13 @@ import { Database } from "./database/database";
 import { Settings } from "./settings";
 import axios, { AxiosRequestConfig } from "axios";
 import { ISettings } from "./interfaces";
+import { ApiKey } from "./database/model/api_key";
 
 const uuidv4 = require('uuid/v4');
 
 export class JasmineSpecHelpers {
-    public existingApiKey: string = "0000-0001";
+    public existingApiKey: ApiKey = new ApiKey({ apiKey: "0000-0001", workgroups: { dev: { limitOpenSessions: 5 }, prod: { limitOpenSessions: 20 } } }) ;
+    public existingWorkgroup: string = "default";
     public existingUserGuid: string = "00000000-0000-0000-0000-000000000001";
     public existingSessionGuid: string = "00000000-1111-0000-0000-000000000001";
     public notExistingSessionGuid: string = "ffffffff-ffff-ffff-ffff-ffffffffffff";
@@ -66,7 +68,7 @@ export class JasmineSpecHelpers {
     public async createSomeWorkspace() {
         let newWorkspace = new Workspace(null);
         newWorkspace.guid = uuidv4();
-        newWorkspace.apiKey = this.existingApiKey;
+        newWorkspace.apiKey = this.existingApiKey.apiKey;
         newWorkspace.workgroup = this.settings.current.workgroup;
         newWorkspace.homeDir = "temp";
         newWorkspace.lastSeen = new Date();
@@ -78,9 +80,9 @@ export class JasmineSpecHelpers {
 }
 
 export class JasmineDeplHelpers {
-    public static existingApiKey:  string = "75f5-4d53-b0f4";
-    public static existingApiKey2: string = "f39b-41cd-9315";
-    public static notExistingApiKey: string = "ffff-ffff-ffff";
+    public static existingApiKey: ApiKey = new ApiKey({ apiKey: "75f5-4d53-b0f4" });
+    public static existingApiKey2: ApiKey = new ApiKey({ apiKey: "f39b-41cd-9315" });
+    public static notExistingApiKey: ApiKey = new ApiKey({ apiKey: "ffff-ffff-ffff" });
 
     public static existingWorkspaceGuid: string    = "cfc3754f-0bf1-4b15-86a5-66e1d077c850";
     public static otherWorkspaceGuid: string       = "94ea71ec-9560-482a-95b8-31a7af5e46dc";
@@ -131,11 +133,11 @@ export class JasmineDeplHelpers {
         }
     }
 
-    public static async openSession(apiKey: string, workspaceGuid: string, maxSceneFilename: string, settings: ISettings, fail: Function, done: Function): Promise<string> {
+    public static async openSession(apiKey: ApiKey, workspaceGuid: string, maxSceneFilename: string, settings: ISettings, fail: Function, done: Function): Promise<string> {
         console.log(`Opening session apiKey: ${apiKey}, workspaceGuid: ${workspaceGuid}, maxSceneFilename: ${maxSceneFilename}`);
 
         let data: any = {
-            api_key: apiKey,
+            api_key: apiKey.apiKey,
             workspace_guid: workspaceGuid,
             scene_filename: maxSceneFilename
         };

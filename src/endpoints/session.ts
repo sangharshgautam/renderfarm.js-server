@@ -3,6 +3,7 @@ import * as express from "express";
 import { IEndpoint, ISettings, ISessionService, IDatabase, IMaxscriptClient, ISessionPool } from "../interfaces";
 import { TYPES } from "../types";
 import { Session } from "../database/model/session";
+import { ApiKey } from "../database/model/api_key";
 
 @injectable()
 class SessionEndpoint implements IEndpoint {
@@ -23,16 +24,17 @@ class SessionEndpoint implements IEndpoint {
         this._maxscriptClientPool = maxscriptClientPool;
     }
 
-    async validateApiKey(res: any, apiKey: string) {
+    async validateApiKey(res: any, apiKey: string): Promise<ApiKey> {
         console.log(`    validating api key: ${apiKey}`)
         try {
-            await this._database.getApiKey(apiKey);
-            return true;
+            const apiKeyRef = await this._database.getApiKey(apiKey);
+            console.log(`    OK | api key accepted: `, apiKeyRef);
+            return apiKeyRef;
         } catch (err) {
             console.log(`REJECT | api_key rejected`);
             res.status(403);
             res.end(JSON.stringify({ ok: false, message: "api_key rejected", error: err.message }, null, 2));
-            return false;
+            return Promise.resolve(null);
         }
     }
 

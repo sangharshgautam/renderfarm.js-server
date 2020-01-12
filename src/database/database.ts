@@ -161,7 +161,7 @@ export class Database implements IDatabase {
 
     //#region Api Keys
     public async getApiKey(apiKey: string): Promise<ApiKey> {
-        return await this.findOneAndUpdate<ApiKey>(
+        return this.findOneAndUpdate<ApiKey>(
             "api-keys", 
             { apiKey: apiKey },
             { $set: { lastSeen: new Date() } },
@@ -207,6 +207,32 @@ export class Database implements IDatabase {
         return session;
     }
 
+    public async getOpenSessions(apiKey: ApiKey): Promise<Session[]> {
+        // TODO: this code is not tested
+
+        let filter: any = {
+            apiKey: apiKey.apiKey,
+            closed: { $ne: true } 
+        };
+
+        let sessions = await this.find<Session>(
+            "sessions",
+            filter,
+            (obj) => new Session(obj));
+
+        for (let session of sessions) {
+            session.workerRef = await this.getSessionWorker(session);
+
+            if (session.workerRef) {
+                session.workerRef.jobRef = await this.getSessionJob(session);
+            }
+
+            session.workspaceRef = await this.getWorkspace(session.workspaceGuid);
+        }
+
+        return sessions;
+    }
+
     public touchSession(sessionGuid: string): Promise<Session> {
         return this.getSession(
             sessionGuid,
@@ -237,16 +263,29 @@ export class Database implements IDatabase {
         ));
     }
 
-    public async createSession(apiKey: string, workspaceGuid: string, sceneFilename: string): Promise<Session> {
+    public async createSession(apiKey: ApiKey, workgroup: string, workspaceGuid: string, sceneFilename: string): Promise<Session> {
         await this.ensureClientConnection();
 
         let db = this._client.db(this._settings.current.databaseName);
         assert.notEqual(db, null);
 
+        if (!apiKey.workgroups[workgroup]) {
+            throw Error("workgroup access denied");
+        }
+
+        let limitOpenSessions = apiKey.workgroups[workgroup].limitOpenSessions;
+        if (limitOpenSessions !== 9999) {
+            let openSessions = await this.getOpenSessions(apiKey);
+            let openSessionsCount = openSessions.filter( s => s.workerRef.workgroup === workgroup ).length;
+            if (openSessionsCount >= limitOpenSessions) {
+                throw Error("reached limit of open sessions");
+            }
+        }
+
         let workspace = await this.getWorkspace(workspaceGuid);
 
         // pick only the workers who were seen not less than 2 seconds ago
-        let workers = await this.getAvailableWorkers();
+        let workers = await this.getAvailableWorkers(workgroup);
 
         // this will prevent multiple worker assignment, if top most worker was set busy = true,
         // then we just pick underlying least loaded worker.
@@ -261,7 +300,7 @@ export class Database implements IDatabase {
         throw Error("all workers busy");
     }
 
-    private async tryCreateSessionAtWorker(apiKey: string, workspace: Workspace, sceneFilename: string, candidate: Worker): Promise<Session> {
+    private async tryCreateSessionAtWorker(apiKey: ApiKey, workspace: Workspace, sceneFilename: string, candidate: Worker): Promise<Session> {
         try {
             let filter: any = {
                 guid: candidate.guid,
@@ -275,7 +314,7 @@ export class Database implements IDatabase {
             let caputuredWorker = await this.findOneAndUpdate<Worker>("workers", filter, setter, (obj: any) => new Worker(obj));
 
             let session = new Session(null);
-            session.apiKey = apiKey;
+            session.apiKey = apiKey.apiKey;
             session.guid = sessionGuid;
             session.ttl = this._settings.current.sessionTimeoutMinutes * 60;
             session.firstSeen = new Date();
@@ -408,7 +447,7 @@ export class Database implements IDatabase {
     public async getWorkspace(workspaceGuid: string): Promise<Workspace> {
         return await this.findOneAndUpdate<Workspace>(
             "workspaces", 
-            { guid: workspaceGuid, workgroup: this._settings.current.workgroup },
+            { guid: workspaceGuid },
             { $set: { lastSeen: new Date() } },
             (obj) => new Workspace(obj));
     }
@@ -441,14 +480,14 @@ export class Database implements IDatabase {
         return worker;
     }
 
-    public async getRecentWorkers(): Promise<Worker[]> {
+    public async getRecentWorkers(workgroup: string): Promise<Worker[]> {
         await this.ensureClientConnection();
 
         let db = this._client.db(this._settings.current.databaseName);
         assert.notEqual(db, null);
 
         let filter = { 
-            workgroup: this._settings.current.workgroup
+            workgroup: workgroup
         };
 
         let result = await db.collection(this.envCollectionName("workers"))
@@ -460,18 +499,23 @@ export class Database implements IDatabase {
         return result.map(e => new Worker(e));
     }
 
-    public async getAvailableWorkers(): Promise<Worker[]> {
+    public async getAvailableWorkers(workgroup?: string): Promise<Worker[]> {
         await this.ensureClientConnection();
 
         let db = this._client.db(this._settings.current.databaseName);
         assert.notEqual(db, null);
 
         let recentOnlineDate = new Date(Date.now() - 2 * 1000);
-        let result = await db.collection(this.envCollectionName("workers")).find({ 
-             workgroup: this._settings.current.workgroup,
-                lastSeen : { $gte: recentOnlineDate },
-                sessionGuid: { $exists: false }
-            }).sort({
+        let filter: any = {
+            lastSeen : { $gte: recentOnlineDate },
+            sessionGuid: { $exists: false }
+        };
+        if (workgroup) {
+            filter.workgroup = workgroup;
+        }
+        let result = await db.collection(this.envCollectionName("workers"))
+            .find(filter)
+            .sort({
                 cpuUsage: 1 //sort by cpu load, less loaded first
             }).toArray();
 
@@ -540,10 +584,10 @@ export class Database implements IDatabase {
         return jobs;
     }
 
-    public async createJob(apiKey: string, workerGuid: string, cameraJson: any, bakeMeshUuid: string, renderWidth: number, renderHeight: number, alpha: boolean, renderSettings: any): Promise<Job> {
+    public async createJob(apiKey: ApiKey, workerGuid: string, cameraJson: any, bakeMeshUuid: string, renderWidth: number, renderHeight: number, alpha: boolean, renderSettings: any): Promise<Job> {
         let job = new Job(null);
 
-        job.apiKey = apiKey;
+        job.apiKey = apiKey.apiKey;
         job.guid = uuidv4();
         job.createdAt = new Date();
         job.updatedAt = new Date();

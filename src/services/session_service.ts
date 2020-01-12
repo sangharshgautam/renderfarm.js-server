@@ -6,6 +6,7 @@ import { Worker } from "../database/model/worker";
 
 ///<reference path="./typings/node/node.d.ts" />
 import { EventEmitter } from "events";
+import { ApiKey } from "../database/model/api_key";
 
 @injectable()
 export class SessionService extends EventEmitter implements ISessionService {
@@ -50,8 +51,8 @@ export class SessionService extends EventEmitter implements ISessionService {
         );
     }
 
-    public async CreateSession(apiKey: string, workspaceGuid: string, sceneFilename?: string): Promise<Session> {
-        console.log(`    creating session: ${apiKey}, ${workspaceGuid}, ${sceneFilename}`)
+    public async CreateSession(apiKey: ApiKey, workspaceGuid: string, sceneFilename?: string): Promise<Session> {
+        console.log(`    creating session: ${apiKey.apiKey}, ${workspaceGuid}, ${sceneFilename}`)
         try {
             let createdSession = await this._database.createSession(
                 apiKey,

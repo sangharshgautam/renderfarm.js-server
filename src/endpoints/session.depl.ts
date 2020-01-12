@@ -5,6 +5,7 @@ import { JasmineDeplHelpers } from "../jasmine.helpers";
 import { Worker } from "../database/model/worker";
 import { isArray } from "util";
 import { Session } from "../database/model/session";
+import { ApiKey } from "../database/model/api_key";
 
 const net = require('net');
 
@@ -163,8 +164,8 @@ describe(`REST API /session endpoint`, function() {
         done();
     })
 
-    async function getOpenSessionAndCheck(apiKey: string, workspaceGuid: string, sessionGuid: string) {
-        console.log(`GET open session and check: apiKey=${apiKey}, workspaceGuid=${workspaceGuid}, sessionGuid=${sessionGuid}`);
+    async function getOpenSessionAndCheck(apiKey: ApiKey, workspaceGuid: string, sessionGuid: string) {
+        console.log(`GET open session and check: apiKey=${apiKey.apiKey}, workspaceGuid=${workspaceGuid}, sessionGuid=${sessionGuid}`);
         let res: any = await axios.get(`${settings.current.protocol}://${settings.current.host}:${settings.current.port}/v${settings.majorVersion}/session/${sessionGuid}`);
         console.log("Response on GET: ", res.data);
 
@@ -174,7 +175,7 @@ describe(`REST API /session endpoint`, function() {
         expect(json.ok).toBeTruthy();
         expect(json.type).toBe("session");
         expect(json.data.guid).toBe(sessionGuid);
-        expect(json.data.apiKey).toBe(apiKey);
+        expect(json.data.apiKey).toBe(apiKey.apiKey);
         expect(json.data.workspaceGuid).toBe(workspaceGuid);
         expect(json.data.workerGuid).toMatch(/\w{8}\-\w{4}\-\w{4}\-\w{4}\-\w{12}/);
 
@@ -188,7 +189,7 @@ describe(`REST API /session endpoint`, function() {
         return new Session(json.data);
     }
 
-    async function getClosedSessionAndCheck(apiKey: string, workspaceGuid: string, sessionGuid: string) {
+    async function getClosedSessionAndCheck(apiKey: ApiKey, workspaceGuid: string, sessionGuid: string) {
         console.log(`GET closed session and check: apiKey=${apiKey}, workspaceGuid=${workspaceGuid}, sessionGuid=${sessionGuid}`);
         let res: any = await axios.get(`${settings.current.protocol}://${settings.current.host}:${settings.current.port}/v${settings.majorVersion}/session/${sessionGuid}`);
         console.log("Response on GET: ", res.data);
@@ -199,7 +200,7 @@ describe(`REST API /session endpoint`, function() {
         expect(json.ok).toBeTruthy();
         expect(json.type).toBe("session");
         expect(json.data.guid).toBe(sessionGuid);
-        expect(json.data.apiKey).toBe(apiKey);
+        expect(json.data.apiKey).toBe(apiKey.apiKey);
         expect(json.data.workspaceGuid).toBe(workspaceGuid);
         expect(json.data.workerGuid).toMatch(/\w{8}\-\w{4}\-\w{4}\-\w{4}\-\w{12}/);
 

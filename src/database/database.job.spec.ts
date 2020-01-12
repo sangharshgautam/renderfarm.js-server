@@ -42,7 +42,7 @@ describe("Database Job", function() {
 
             expect(job).toBeTruthy();
             expect(job.guid).toBe(helpers.existingJobGuid);
-            expect(job.apiKey).toBe(helpers.existingApiKey);
+            expect(job.apiKey).toBe(helpers.existingApiKey.apiKey);
 
             expect(job.createdAt).toEqual(new Date("2000-01-01 00:00:00.000"));
             expect(job.updatedAt).toEqual(new Date("2000-01-01 00:00:00.000"));
@@ -118,7 +118,7 @@ describe("Database Job", function() {
 
             expect(job).toBeTruthy();
             expect(job.guid).toBe(newJob.guid);
-            expect(job.apiKey).toBe(helpers.existingApiKey);
+            expect(job.apiKey).toBe(helpers.existingApiKey.apiKey);
             expect(job.workerGuid).toBe(helpers.existingWorkerGuid);
             expect(job.state).toBe("pending");
             expect(Date.now() - job.createdAt.getTime()).toBeLessThan(3000);

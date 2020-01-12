@@ -26,7 +26,7 @@ export interface IDatabase {
     //sessions
     getSession(sessionGuid: string, options?: any): Promise<Session>;
     touchSession(sessionGuid: string): Promise<Session>;
-    createSession(apiKey: string, workspace: string, sceneFilename?: string): Promise<Session>;
+    createSession(apiKey: ApiKey, workgroup: string, workspace: string, sceneFilename?: string): Promise<Session>;
     expireSessions(olderThanMinutes: number): Promise<Session[]>;
     closeSession(sessionGuid: string): Promise<Session>;
     failSession(sessionGuid: string, failReason?: string | undefined): Promise<Session>;
@@ -39,15 +39,15 @@ export interface IDatabase {
     insertWorker(worker: Worker): Promise<Worker>;
     upsertWorker(worker: Worker): Promise<boolean>;
     updateWorker(worker: Worker, setter: any): Promise<Worker>;
-    getRecentWorkers(): Promise<Worker[]>;
-    getAvailableWorkers(): Promise<Worker[]>;
+    getRecentWorkers(workgroup: string): Promise<Worker[]>;
+    getAvailableWorkers(workgroup?: string): Promise<Worker[]>;
 
     //storeVraySpawner(vraySpawnerInfo: VraySpawnerInfo): Promise<VraySpawnerInfo>;
 
     //jobs
     getJob(jobGuid: string): Promise<Job>;
     getActiveJobs(workgroup: string): Promise<Job[]>;
-    createJob(apiKey: string, workerGuid: string, cameraJson: any, bakeMeshUuid: string, renderWidth: number, renderHeight: number, alpha: boolean, renderSettings: any): Promise<Job>;
+    createJob(apiKey: ApiKey, workerGuid: string, cameraJson: any, bakeMeshUuid: string, renderWidth: number, renderHeight: number, alpha: boolean, renderSettings: any): Promise<Job>;
     updateJob(job: Job, setter: any): Promise<Job>;
     completeJob(job: Job, urls: string[]): Promise<Job>;
     cancelJob(job: Job): Promise<Job>;
@@ -146,7 +146,7 @@ export interface IJobService {
 
 export interface ISessionService {
     GetSession(sessionGuid: string, allowClosed?: boolean, letTouch?: boolean, resolveRefs?: boolean): Promise<Session>;
-    CreateSession(apiKey: string, workspaceGuid: string, sceneFilename?: string): Promise<Session>;
+    CreateSession(apiKey: ApiKey, workgroup: string, workspaceGuid: string, sceneFilename?: string): Promise<Session>;
     KeepSessionAlive(sessionGuid: string): Promise<Session>;
     CloseSession(sessionGuid: string): Promise<Session>;
     ExpireSessions(sessionTimeoutMinutes: number): Promise<Session[]>;

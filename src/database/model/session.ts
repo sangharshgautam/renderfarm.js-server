@@ -1,6 +1,7 @@
 import { IDbEntity } from "./base/IDbEntity";
 import { Worker } from "./worker";
 import { Workspace } from "./workspace";
+import { ApiKey } from "./api_key";
 
 export class Session extends IDbEntity {
     public apiKey: string;
@@ -17,6 +18,7 @@ export class Session extends IDbEntity {
     public failed?: boolean;
     public failReason?: string;
 
+    public apiKeyRef?: ApiKey;
     public workerRef?: Worker;
     public workspaceRef?: Workspace;
 

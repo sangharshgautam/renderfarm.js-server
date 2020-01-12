@@ -122,7 +122,7 @@ class JobEndpoint implements IEndpoint {
                 return;
             }
 
-            let job = await this._database.createJob(session.apiKey, session.workerGuid, cameraJson, bakeMeshUuid, renderWidth, renderHeight, alpha, renderSettings);
+            let job = await this._database.createJob(session.apiKeyRef, session.workerGuid, cameraJson, bakeMeshUuid, renderWidth, renderHeight, alpha, renderSettings);
 
             this._jobService.Start(session, job);
 
