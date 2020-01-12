@@ -132,7 +132,7 @@ export class WorkerService extends EventEmitter implements IWorkerService {
             newWorker.port = rec.port;
             newWorker.firstSeen = new Date();
             newWorker.lastSeen = new Date();
-            newWorker.workgroup = rec.workgroup;
+            newWorker.workgroup = rec.workgroup || "default";
             newWorker.cpuUsage = rec.cpu_usage;
             newWorker.ramUsage = rec.ram_usage;
             newWorker.totalRam = rec.total_ram;
