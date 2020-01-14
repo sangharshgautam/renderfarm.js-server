@@ -62,8 +62,16 @@ class JobEndpoint implements IEndpoint {
 
             this._sessionService.KeepSessionAlive(job.workerRef.sessionGuid);
 
+            let jobJson = job.toJSON();
+            if (jobJson.cameraJson) {
+                delete jobJson.cameraJson;
+            }
+            if (job.workerRef) {
+                jobJson.vrayProgress = job.workerRef.vrayProgress;
+            }
+
             res.status(200);
-            res.end(JSON.stringify({ ok: true, type: "jobs", data: job.toJSON() }, null, 2));
+            res.end(JSON.stringify({ ok: true, type: "jobs", data: jobJson }, null, 2));
         }.bind(this));
 
         express.post(`/v${this._settings.majorVersion}/job`, async function (this: JobEndpoint, req: express.Request, res: express.Response) {
