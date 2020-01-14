@@ -152,7 +152,8 @@ export class WorkerEndpoint implements IEndpoint {
                     $set: {
                         lastSeen: new Date(),
                         cpuUsage: worker.cpuUsage,
-                        ramUsage: worker.ramUsage
+                        ramUsage: worker.ramUsage,
+                        vrayProgress: worker.vrayProgress,
                     }
                 });
         } catch (err) {

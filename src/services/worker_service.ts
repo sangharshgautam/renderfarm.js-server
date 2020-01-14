@@ -146,14 +146,17 @@ export class WorkerService extends EventEmitter implements IWorkerService {
     }
 
     private handleHeartbeatFromWorkerManager(msg, rinfo, rec) {
-
+        //console.log(rec);
         if (rec.worker_progress && Array.isArray(rec.worker_progress)) {
             for (let wp of rec.worker_progress) {
                 var workerId = rec.mac + wp.port;
                 let knownWorker = this._workers[workerId];
                 if (knownWorker !== undefined) { // update existing record
-                    knownWorker.vrayProgress = rec.vray_progress;
-                    this.emit("worker:updated", knownWorker);
+                    if (" " + knownWorker.vrayProgress !== " " + wp.vray_progress) {
+                        knownWorker.vrayProgress = wp.vray_progress;
+                        console.log(` >> worker ${workerId} updated vray progress: `, wp.vray_progress);
+                        this.emit("worker:updated", knownWorker);
+                    }
                 }
             }
         }
