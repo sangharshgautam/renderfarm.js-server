@@ -146,30 +146,41 @@ export class WorkerService extends EventEmitter implements IWorkerService {
     }
 
     private handleHeartbeatFromWorkerManager(msg, rinfo, rec) {
-        if (!rec.vray_spawner) {
-            return;
+
+        if (rec.worker_progress && Array.isArray(rec.worker_progress)) {
+            for (let wp of rec.worker_progress) {
+                var workerId = rec.mac + wp.port;
+                let knownWorker = this._workers[workerId];
+                if (knownWorker !== undefined) { // update existing record
+                    knownWorker.vrayProgress = rec.vray_progress;
+                    this.emit("worker:updated", knownWorker);
+                }
+            }
         }
-        var vraySpawnerId = rec.ip + rec.mac;
-        let knownVraySpawner = this._vraySpawners[vraySpawnerId];
-        if (knownVraySpawner !== undefined) { // update existing record
-            knownVraySpawner.cpuUsage = rec.cpu_usage;
-            knownVraySpawner.ramUsage = rec.ram_usage;
-            knownVraySpawner.totalRam = rec.total_ram;
-            knownVraySpawner.touch();
 
-            this.emit("spawner:updated", knownVraySpawner);
-        }
-        else {
-            // all who report into this api belongs to current workgroup
-            let newVraySpawner = new VraySpawnerInfo(rec.mac, rinfo.address, this._settings.current.workgroup);
-            newVraySpawner.cpuUsage = rec.cpu_usage;
-            newVraySpawner.ramUsage = rec.ram_usage;
-            newVraySpawner.totalRam = rec.total_ram;
-            this._vraySpawners[vraySpawnerId] = newVraySpawner;
+        if (rec.vray_spawner) {
+            var vraySpawnerId = rec.ip + rec.mac;
+            let knownVraySpawner = this._vraySpawners[vraySpawnerId];
+            if (knownVraySpawner !== undefined) { // update existing record
+                knownVraySpawner.cpuUsage = rec.cpu_usage;
+                knownVraySpawner.ramUsage = rec.ram_usage;
+                knownVraySpawner.totalRam = rec.total_ram;
+                knownVraySpawner.touch();
 
-            this.emit("spawner:added", newVraySpawner);
+                this.emit("spawner:updated", knownVraySpawner);
+            }
+            else {
+                // all who report into this api belongs to current workgroup
+                let newVraySpawner = new VraySpawnerInfo(rec.mac, rinfo.address, this._settings.current.workgroup);
+                newVraySpawner.cpuUsage = rec.cpu_usage;
+                newVraySpawner.ramUsage = rec.ram_usage;
+                newVraySpawner.totalRam = rec.total_ram;
+                this._vraySpawners[vraySpawnerId] = newVraySpawner;
 
-            console.log(`new vray spawner: ${msg} from ${rinfo.address}`);
+                this.emit("spawner:added", newVraySpawner);
+
+                console.log(`new vray spawner: ${msg} from ${rinfo.address}`);
+            }
         }
     }
 }

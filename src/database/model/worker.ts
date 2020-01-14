@@ -11,6 +11,7 @@ export class Worker extends IDbEntity {
     public workgroup: string;
     public firstSeen: Date;
     public lastSeen: Date;
+    public vrayProgress: string;
     public cpuUsage: number;
     public ramUsage: number;
     public totalRam: number;
@@ -35,6 +36,7 @@ export class Worker extends IDbEntity {
         this.workgroup = obj.workgroup;
         this.firstSeen = obj.firstSeen ? new Date(obj.firstSeen) : undefined;
         this.lastSeen  = obj.lastSeen ? new Date(obj.lastSeen) : undefined;
+        this.vrayProgress = obj.vrayProgress ? obj.vrayProgress : null;
         this.cpuUsage  = obj.cpuUsage;
         this.ramUsage  = obj.ramUsage;
         this.totalRam  = obj.totalRam;
@@ -51,6 +53,7 @@ export class Worker extends IDbEntity {
             workgroup: this.workgroup,
             firstSeen: this.firstSeen,
             lastSeen:  this.lastSeen,
+            vrayProgress: this.vrayProgress,
             cpuUsage:  this.cpuUsage,
             ramUsage:  this.ramUsage,
             totalRam:  this.totalRam,

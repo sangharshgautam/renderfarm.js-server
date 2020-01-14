@@ -5,7 +5,6 @@ import { TYPES } from "../types";
 import { VraySpawnerInfo } from "../model/vray_spawner_info";
 import { Worker } from "../database/model/worker";
 import { Session } from "inspector";
-import { ApiKey } from "../database/model/api_key";
 
 @injectable()
 export class WorkerEndpoint implements IEndpoint {
