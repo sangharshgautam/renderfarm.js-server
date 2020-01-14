@@ -1,6 +1,9 @@
 node_modules/
 dist/
 letsencrypt/
+*.cert
+*.pem
+.rnd
 package-lock.json
 
 app.settings.ts

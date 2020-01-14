@@ -13,7 +13,9 @@
     "inversify": "^5.0.1",
     "jszip": "^3.2.2",
     "lz-string": "^1.4.4",
+    "md5": "^2.2.1",
     "mime-types": "^2.1.22",
+    "mixpanel": "^0.11.0",
     "mongodb": "^3.1.13",
     "multer": "^1.4.1",
     "reflect-metadata": "^0.1.13",
@@ -33,7 +35,8 @@
     "typescript": "^3.7.4"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "node ./node_modules/typescript/bin/tsc",
+    "dev": "npm run build && node ./dist/index.js env=DEV",
     "test-spec": "tsc & jasmine --config=jasmine.spec.json",
     "test-depl": "tsc & jasmine --config=jasmine.depl.json"
   },
