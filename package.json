@@ -29,14 +29,14 @@
     "@types/uuid": "^3.4.4",
     "form-data": "^2.3.3",
     "ftp": "^0.3.10",
-    "jasmine": "^3.5.0",
     "jasmine-reporters": "^2.3.2",
     "tmp": "0.0.33",
     "typescript": "^3.7.4"
   },
   "scripts": {
     "build": "node ./node_modules/typescript/bin/tsc",
-    "dev": "npm run build && node ./dist/index.js env=DEV",
+    "dev": "npm run build && export NODE_ENV=dev && node ./dist/index.js",
+    "dev2": "npm run build && export NODE_ENV=dev2 && node ./dist2/index.js",
     "test-spec": "tsc & jasmine --config=jasmine.spec.json",
     "test-depl": "tsc & jasmine --config=jasmine.depl.json"
   },

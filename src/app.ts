@@ -6,6 +6,9 @@ import { injectable, multiInject, inject } from "inversify";
 import { IApp, IEndpoint, ISettings, IMixpanel } from "./interfaces";
 import { TYPES } from "./types";
 
+const fs = require('fs');
+const path = require('path');
+
 @injectable()
 class App implements IApp {
 
@@ -41,7 +44,8 @@ class App implements IApp {
             extended: true,
             limit: '50mb'
         }));
-        
+        this._express.use(bodyParser.raw({type: 'application/octet-stream', limit : '250mb'}))
+
         this._express.use(function(req, res, next) {
             res.header("Access-Control-Allow-Origin", "*");
             res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Session-Guid");
@@ -69,7 +73,6 @@ class App implements IApp {
 
             let mimeType = "image/x-icon";
 
-            const fs = require('fs');
             fs.readFile("favicon.ico", function(err, content) {
                 if (err) {
                     console.error(err);
@@ -84,6 +87,27 @@ class App implements IApp {
                     res.end(content);
                 }
             });
+        }.bind(this));
+
+        this._express.post('/v1/xupload', function (this: App, req, res) {
+            console.log(`POST on /xupload, `, req.body.length + ' bytes received');
+
+            var filePath = path.join('/home/rfarm-api/xupload', `/${Date.now()}.bin`)
+            console.log(` >> writing to file path: `, filePath)
+
+            fs.open(filePath, 'w', function(err, fd) {  
+                fs.write(fd, req.body, 0, req.body.length, null, function(err) {
+                    if (err) throw 'error writing file: ' + err;
+                    fs.close(fd, function() {
+                        console.log('     OK | wrote the file successfully: ', filePath);
+                        res.status(201).end();
+                    });
+                });
+            });
+
+            res.status(201);
+            res.end();
+
         }.bind(this));
 
         for (let endp of endpoints) {

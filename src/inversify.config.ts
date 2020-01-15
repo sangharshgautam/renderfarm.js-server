@@ -70,7 +70,17 @@ myContainer.bind<interfaces.IFactory<interfaces.IMaterialBinding>>(TYPES.IMateri
 // now bind settings
 //  > export NODE_ENV=staging
 //  > pm2 start app.js
-let env: string = process.env.NODE_ENV || "dev";
+
+let env: string = null;
+try {
+    env = process.argv.find(e => e.match(/env=(\w+)/) !== null ).split("=")[1];
+} catch {
+}
+
+if (!env) {
+    env = process.env.NODE_ENV || "dev";
+}
+
 console.log("Current Environment: ", env);
 myContainer.bind<interfaces.ISettings>(TYPES.ISettings).toConstantValue(new Settings(env));
 

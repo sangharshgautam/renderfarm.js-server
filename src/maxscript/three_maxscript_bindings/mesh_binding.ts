@@ -16,7 +16,7 @@ export class MeshBinding extends SceneObjectBindingBase {
         let material = Array.isArray(objectJson.material)
                         ? objectJson.material.map(m => this._materialCache.Materials[m])
                         : this._materialCache.Materials[objectJson.material];
-        console.log(` >> MeshBinding resolved material: `, material);
+        console.log(` >> MeshBinding resolved material: `, material.ThreeJson);
 
         if (material) { // TODO: Mesh may have many material slots
             console.log(" >> found material in cache: ", material.ThreeJson);
