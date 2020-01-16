@@ -23,11 +23,20 @@ export class Mixpanel implements IMixpanel {
     public trackRequest(req: any, res: any): void {
         if (this._mixpanel) {
             let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+            let url = req.url.replace(/\w{8}\-\w{4}\-\w{4}\-\w{4}\-\w{12}/g, ":guid");
+
+            if (url !== '/v1/session/:guid') {
+                return;
+            }
+
             this._mixpanel.track('request', {
                 ip: ip,
                 method: req.method,
-                url: req.url.replace(/\w{8}\-\w{4}\-\w{4}\-\w{4}\-\w{12}/g, ":guid"),
+                url: url,
+                raw_url: req.url,
                 query: req.query,
+                params: req.params,
                 ip_addr: ip,
             });
         }
