@@ -8,6 +8,8 @@ import { TYPES } from "./types";
 
 const fs = require('fs');
 const path = require('path');
+const cors = require('cors');
+const timeout = require('connect-timeout'); //express v4
 
 @injectable()
 class App implements IApp {
@@ -34,15 +36,18 @@ class App implements IApp {
 
     private config(): void{
 
+        // Enable All CORS Requests, see https://www.npmjs.com/package/cors
+        this._express.use(cors());
+
         // to support JSON-encoded bodies
         this._express.use(express.json({
-            limit: '50mb'
+            limit: '250mb'
         }));
 
         // to support URL-encoded bodies
         this._express.use(bodyParser.urlencoded({
             extended: true,
-            limit: '50mb'
+            limit: '250mb'
         }));
         this._express.use(bodyParser.raw({type: 'application/octet-stream', limit : '250mb'}))
 
@@ -59,6 +64,13 @@ class App implements IApp {
             self._mixpanel.trackRequest(req, res);
             next();
         });
+
+        this._express.use(timeout(15*60*1000));
+        this._express.use(haltOnTimedout);
+
+        function haltOnTimedout(req, res, next){
+            if (!req.timedout) next();
+        }
     }
 
     private bindEndpoints(endpoints: IEndpoint[]) {
