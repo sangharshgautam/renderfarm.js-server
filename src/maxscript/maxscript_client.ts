@@ -106,7 +106,8 @@ class MaxscriptClient implements IMaxscriptClient {
     }
 
     resetScene(): Promise<boolean> {
-        let maxscript = `resetMaxFile #noPrompt`;
+        let maxscript = `resetMaxFile #noPrompt ; \r\n ` 
+                      + `enableSceneRedraw() ; `;
         return this.execMaxscript(maxscript, "resetScene");
     }
 

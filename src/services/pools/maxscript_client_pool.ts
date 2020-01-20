@@ -79,6 +79,7 @@ export class MaxScriptClientPool extends SessionPoolBase<IMaxscriptClient> {
 
     protected async onBeforeItemRemove(closedSession: Session, maxscript: IMaxscriptClient): Promise<any> {
         try {
+            await maxscript.resetScene();
             maxscript.disconnect();
         } catch (err) {
             console.log(`  WARN | client.disconnect threw exception, `, err);
