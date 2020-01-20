@@ -55,7 +55,6 @@ class MaxscriptClient implements IMaxscriptClient {
     }
 
     execMaxscript(maxscript: string, actionDesc: string, responseChecker: (resp: string) => boolean = null): Promise<boolean> {
-        // console.log(` MAXSCRIPT: \n${maxscript}`);
         const startedAt = Date.now();
 
         return new Promise<boolean>(function(this: MaxscriptClient, resolve, reject) {
@@ -108,6 +107,9 @@ class MaxscriptClient implements IMaxscriptClient {
     resetScene(): Promise<boolean> {
         let maxscript = `resetMaxFile #noPrompt ; \r\n ` 
                       + `enableSceneRedraw() ; `;
+
+        console.log(" >> maxscript: \r\n", maxscript);
+
         return this.execMaxscript(maxscript, "resetScene");
     }
 
@@ -125,6 +127,8 @@ class MaxscriptClient implements IMaxscriptClient {
                         + ` ) else ( \r\n`
                         + `     print "FAIL | scene file not found" \r\n`
                         + ` ) `;
+        
+        console.log(" >> maxscript: \r\n", maxscript);
 
         return this.execMaxscript(maxscript, "openScene");
     }

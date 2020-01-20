@@ -71,6 +71,13 @@ export abstract class SessionPoolBase<T> implements ISessionPool<T> {
             return;
         }
 
+        try {
+            this.onBeforeItemRemove(session, item);
+        } catch (exc) {
+            console.log(exc);
+            console.log(` WARN | onBeforeItemRemove threw exception, execution will proceed`);
+        }
+
         delete this._items[session.guid];
     }
 
