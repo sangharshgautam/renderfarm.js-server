@@ -60,11 +60,11 @@ class ThreeObjectEndpoint implements IEndpoint {
             }
 
             // check that session has no active job, i.e. it is not being rendered
-            if (session.workerRef && session.workerRef.jobRef) {
-                res.status(403);
-                res.end(JSON.stringify({ ok: false, message: "changes forbidden, session is being rendered", error: null }, null, 2));
-                return;
-            }
+            //if (session.workerRef && session.workerRef.jobRef) {
+            //    res.status(403);
+            //    res.end(JSON.stringify({ ok: false, message: "changes forbidden, session is being rendered", error: null }, null, 2));
+            //    return;
+            //}
 
             let compressedJson = req.body.compressed_json; // this is to create scene or add new obejcts to scene
             if (!compressedJson) {

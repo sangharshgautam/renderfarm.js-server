@@ -15,7 +15,13 @@ export class Object3DBinding extends SceneObjectBindingBase {
         let objName = this.getObjectName(objectJson);
         let parentName = this.getObjectName(parentJson);
 
-        await this._maxscriptClient.createDummy(objName);
+        if (objectJson.userData && objectJson.userData.xrefScene) {
+            console.log(` >> Object3D contains xrefScene definition: `, objectJson.userData.xrefScene);
+            await this._maxscriptClient.xrefScene(objectJson.userData.xrefScene.filename, this._workspace, objName);
+        } else {
+            await this._maxscriptClient.createDummy(objName);
+        }
+
         await this._maxscriptClient.linkToParent(objName, parentName);
         await this._maxscriptClient.setObjectMatrix(objName, objectJson.matrix);
 
