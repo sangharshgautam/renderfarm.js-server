@@ -34,22 +34,33 @@ export class MeshBinding extends SceneObjectBindingBase {
         let meshName = this.getObjectName(objectJson);
         let parentName = this.getObjectName(parentJson);
 
-        let postResult = await geometry.Post(objectJson.uuid, meshName);
+        let postResult = null;
+        if (objectJson.userData.xrefScene) {
+            console.log(` >> mesh contains xrefScene definition: `, objectJson.userData.xrefScene);
+            await this._maxscriptClient.xrefScene(objectJson.userData.xrefScene.filename, this._workspace, meshName);
 
-        await this._maxscriptClient.linkToParent(meshName, parentName);
-        await this._maxscriptClient.setObjectMatrix(meshName, objectJson.matrix);
+            await this._maxscriptClient.linkToParent(meshName, parentName);
+            await this._maxscriptClient.setObjectMatrix(meshName, objectJson.matrix);
+            postResult = {};
 
-        console.log(` >> mesh binding, considering material`);
-        if (material && material.ThreeJson && material.ThreeJson.name) {
-            let materialName = material.ThreeJson.name;
-            console.log(` >> material will be assigned: `, materialName);
-            await this._maxscriptClient.assignMaterial(meshName, materialName);
-        }
+        } else {
+            postResult = await geometry.Post(objectJson.uuid, meshName);
 
-        if (Array.isArray(material)) {
-            let materialNames = material.map(m => m.ThreeJson.name);
-            console.log(` >> TODO: assign multiSubMaterial: `, materialNames);
-            await this._maxscriptClient.assignMultiSubMaterial(meshName, materialNames);
+            await this._maxscriptClient.linkToParent(meshName, parentName);
+            await this._maxscriptClient.setObjectMatrix(meshName, objectJson.matrix);
+
+            console.log(` >> mesh binding, considering material`);
+            if (material && material.ThreeJson && material.ThreeJson.name) {
+                let materialName = material.ThreeJson.name;
+                console.log(` >> material will be assigned: `, materialName);
+                await this._maxscriptClient.assignMaterial(meshName, materialName);
+            }
+    
+            if (Array.isArray(material)) {
+                let materialNames = material.map(m => m.ThreeJson.name);
+                console.log(` >> assign multiSubMaterial: `, materialNames);
+                await this._maxscriptClient.assignMultiSubMaterial(meshName, materialNames);
+            }
         }
 
         this._maxName = meshName;

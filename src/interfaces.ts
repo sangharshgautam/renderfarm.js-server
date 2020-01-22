@@ -80,7 +80,8 @@ export interface IMaxscriptClient {
     execMaxscript(maxscript: string, actionDesc: string): Promise<boolean>;
 
     resetScene(): Promise<boolean>;
-    openScene(maxSceneFilename: string, workspace: Workspace);
+    openScene(maxSceneFilename: string, workspace: Workspace): Promise<boolean>;
+    xrefScene(maxSceneFilename: string, workspace: Workspace, nodeName: string): Promise<boolean>;
 
     setObjectWorldMatrix(nodeName, matrixWorldArray): Promise<boolean>;
     setObjectMatrix(nodeName, matrixArray): Promise<boolean>;

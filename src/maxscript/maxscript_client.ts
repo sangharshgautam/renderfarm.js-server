@@ -133,6 +133,45 @@ class MaxscriptClient implements IMaxscriptClient {
         return this.execMaxscript(maxscript, "openScene");
     }
 
+    xrefScene(maxSceneFilename: string, workspace: Workspace, nodeName: string): Promise<boolean> {
+        // see here: http://docs.autodesk.com/3DSMAX/14/ENU/MAXScript%20Help%202012//index.html?url=files/GUID-3265908F-28AB-441E-9866-071BBEDD9FF-1053.htm,topicNumber=d28e344839
+
+        let maxscript = `xrefSceneFilename = "${workspace.homeDir}\\\\api-keys\\\\${workspace.apiKey}\\\\workspaces\\\\${workspace.guid}\\\\xrefs\\\\${maxSceneFilename}" ; \r\n`
+                        + `if existFile xrefSceneFilename then ( \r\n`
+                        + `    xrefSceneParent = Dummy() ; \r\n`
+                        + `    xrefSceneParent.name = "${nodeName}" ; \r\n`
+                        + `    xrefFile0 = xrefs.addNewXRefFile xrefSceneFilename ; \r\n`
+                        + `    xrefFile0.parent = xrefSceneParent ; \r\n`
+                        + ` ) else ( \r\n`
+                        + `     print "FAIL | scene file not found" \r\n`
+                        + ` ) `;
+
+        console.log(" >> maxscript: \r\n", maxscript);
+
+        return this.execMaxscript(maxscript, "xrefScene");
+
+        /*
+dir = "E:\\1_Z200_diskE\\Evermotion\\Evermotion Archmodels Vol. 112\\Vray"
+filename = "Archmodels_112_001_vray.max"
+
+fullpath = (dir + "\\" + filename)
+
+-- xrefs.addNewXRefObject  "$*" #proxy modifiers:#xref	manipulators: #xref dupMtlNameAction: #autoRename
+
+<XRefScene>.autoUpdate Boolean default: false 
+<XRefScene>.boxDisp Boolean default: false 
+<XRefScene>.hidden Boolean default: false 
+<XRefScene>.disabled Boolean default: false 
+<XRefScene>.ignoreLights Boolean default: false
+<XRefScene>.ignoreCameras Boolean default: false 
+<XRefScene>.ignoreShapes Boolean default: false 
+<XRefScene>.ignoreHelpers Boolean default: false 
+<XRefScene>.ignoreAnimation Boolean default: false 
+
+        */
+       // return Promise.resolve(true);
+    }
+
     setObjectWorldMatrix(nodeName, matrixWorldArray): Promise<boolean> {
         let m = matrixWorldArray;
         let maxscript = `in coordsys world $${nodeName}.transform = (matrix3 [${m[0]},${m[1]},${m[2]}] [${m[4]},${m[5]},${m[6]}] [${m[8]},${m[9]},${m[10]}] [${m[12]},${m[13]},${m[14]}])`;

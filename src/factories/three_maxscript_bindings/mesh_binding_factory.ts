@@ -28,6 +28,6 @@ export class MeshBindingFactory implements ISceneObjectBindingFactory {
         let maxscript: IMaxscriptClient = await this._maxscriptClientPool.Get(session);
         let geometryCache = await this._geometryCachePool.Get(session);
         let materialCache = await this._materialCachePool.Get(session);
-        return new MeshBinding(maxscript, geometryCache, materialCache);
+        return new MeshBinding(maxscript, geometryCache, materialCache, session.workspaceRef);
     }
 }
