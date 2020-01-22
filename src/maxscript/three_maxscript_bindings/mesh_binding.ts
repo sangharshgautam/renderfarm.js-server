@@ -35,7 +35,7 @@ export class MeshBinding extends SceneObjectBindingBase {
         let parentName = this.getObjectName(parentJson);
 
         let postResult = null;
-        if (objectJson.userData.xrefScene) {
+        if (objectJson.userData && objectJson.userData.xrefScene) {
             console.log(` >> mesh contains xrefScene definition: `, objectJson.userData.xrefScene);
             await this._maxscriptClient.xrefScene(objectJson.userData.xrefScene.filename, this._workspace, meshName);
 

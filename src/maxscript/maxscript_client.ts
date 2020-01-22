@@ -140,8 +140,17 @@ class MaxscriptClient implements IMaxscriptClient {
                         + `if existFile xrefSceneFilename then ( \r\n`
                         + `    xrefSceneParent = Dummy() ; \r\n`
                         + `    xrefSceneParent.name = "${nodeName}" ; \r\n`
+
+                        + `    xrefSceneRoot = Dummy() ; \r\n`
+                        + `    xrefSceneRoot.name = "xref" ; \r\n`
+
                         + `    xrefFile0 = xrefs.addNewXRefFile xrefSceneFilename ; \r\n`
-                        + `    xrefFile0.parent = xrefSceneParent ; \r\n`
+                        + `    xrefFile0.parent = xrefSceneRoot ; \r\n`
+
+                        + `    rotate xrefSceneRoot (eulerangles -90 0 0) ; \r\n `
+
+                        + `    xrefSceneRoot.parent = xrefSceneParent ; \r\n`
+
                         + ` ) else ( \r\n`
                         + `     print "FAIL | scene file not found" \r\n`
                         + ` ) `;

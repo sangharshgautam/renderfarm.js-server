@@ -54,7 +54,7 @@ class ThreeObjectEndpoint implements IEndpoint {
             console.log(`POST on ${req.path} with session: ${sessionGuid}`);
 
             // check that session is actually open
-            let session: Session = await this._sessionService.GetSession(sessionGuid, false, false);
+            let session: Session = await this._sessionService.GetSession(sessionGuid, false, false, true);
             if (!session) {
                 return;
             }
