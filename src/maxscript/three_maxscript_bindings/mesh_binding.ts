@@ -12,40 +12,45 @@ export class MeshBinding extends SceneObjectBindingBase {
     public async Post(objectJson: any, parentJson: any): Promise<PostResult> {
         console.log(" >> MeshBinding:\r\nobjectJson=", objectJson, "\r\nparentJson=", parentJson, "\r\n");
 
-        let geometry = this._geometryCache.Geometries[objectJson.geometry];
-        let material = Array.isArray(objectJson.material)
-                        ? objectJson.material.map(m => this._materialCache.Materials[m])
-                        : this._materialCache.Materials[objectJson.material];
-        console.log(` >> MeshBinding resolved material: `, material.ThreeJson);
-
-        if (material) { // TODO: Mesh may have many material slots
-            console.log(" >> found material in cache: ", material.ThreeJson);
-        }
-
-        if (!geometry) {
-            console.log(`   WARN | geometry not cached: ${objectJson.geometry}`);
-            return Promise.resolve({});
-        }
-
-        if (!material) {
-            console.log(`   WARN | material not cached: ${objectJson.material}`);
-        }
-
         let meshName = this.getObjectName(objectJson);
         let parentName = this.getObjectName(parentJson);
 
         let postResult = null;
-        if (objectJson.userData && objectJson.userData.xrefScene) {
+        if (objectJson.userData && objectJson.userData.renderable === false) {
+            console.log(` >> mesh binding, not renderable. Creating dummy`);
+            await this._maxscriptClient.createDummy(meshName);
+            await this._maxscriptClient.linkToParent(meshName, parentName);
+            await this._maxscriptClient.setObjectMatrix(meshName, objectJson.matrix);
+            postResult = {};
+
+        } else if (objectJson.userData && objectJson.userData.xrefScene) {
             console.log(` >> mesh contains xrefScene definition: `, objectJson.userData.xrefScene);
             await this._maxscriptClient.xrefScene(objectJson.userData.xrefScene.filename, this._workspace, meshName);
-
             await this._maxscriptClient.linkToParent(meshName, parentName);
             await this._maxscriptClient.setObjectMatrix(meshName, objectJson.matrix);
             postResult = {};
 
         } else {
-            postResult = await geometry.Post(objectJson.uuid, meshName);
+            let geometry = this._geometryCache.Geometries[objectJson.geometry];
+            let material = Array.isArray(objectJson.material)
+                        ? objectJson.material.map(m => this._materialCache.Materials[m])
+                        : this._materialCache.Materials[objectJson.material];
+            console.log(` >> MeshBinding resolved material: `, material.ThreeJson);
 
+            if (material) { // TODO: Mesh may have many material slots
+                console.log(" >> found material in cache: ", material.ThreeJson);
+            }
+
+            if (!geometry) {
+                console.log(`   WARN | geometry not cached: ${objectJson.geometry}`);
+                return Promise.resolve({});
+            }
+
+            if (!material) {
+                console.log(`   WARN | material not cached: ${objectJson.material}`);
+            }
+
+            postResult = await geometry.Post(objectJson.uuid, meshName);
             await this._maxscriptClient.linkToParent(meshName, parentName);
             await this._maxscriptClient.setObjectMatrix(meshName, objectJson.matrix);
 

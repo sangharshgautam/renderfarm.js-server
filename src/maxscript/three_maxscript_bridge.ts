@@ -38,10 +38,6 @@ export class ThreeMaxscriptBridge implements IThreeMaxscriptBridge {
         while (queue.length > 0) {
             let el: any = queue.shift();
 
-            if (el.object.userData && el.object.userData.renderable === false) {
-                continue;
-            }
-
             let postResult = await this._createObjectBinding(session, el.object, el.parent);
             if (!postResult) {
                 continue;
