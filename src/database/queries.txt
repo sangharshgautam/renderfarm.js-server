@@ -1,0 +1,70 @@
+startDate = ISODate("2020-01-01T00:00:00.000Z"); endDate = ISODate("2020-02-01T00:00:00.000Z"); db["dev-sessions"].aggregate(
+    [
+        {
+            $match: { 
+                apiKey: "a961-4bcb-bb85", 
+                closedAt : { $lt: endDate },
+                closedAt : { $gte: startDate }
+            }
+        },
+        {
+            $group: {
+                _id: "$cust_id",
+                hours: { $sum: { $divide: [ { $subtract: [ "$closedAt", "$firstSeen" ] }, 1000*60*60 ] } },
+                count: { $sum: 1 }
+            }
+        }
+    ]
+);
+
+startDate = ISODate("2020-01-01T00:00:00.000Z"); endDate = ISODate("2020-02-01T00:00:00.000Z"); db["dev-sessions"].aggregate(
+    [
+        {
+            $match: { 
+                apiKey: "a961-4bcb-bb85", 
+                closedAt : { $lt: endDate }
+            }
+        },
+        {
+            $addFields: {
+                saleDate: {
+                    $dateFromParts: {
+                        year:{$year:"$firstSeen"},
+                        month:{$month:"$firstSeen"},
+                        day:{$dayOfMonth : "$firstSeen" }
+                    }
+                },
+                dateRange: {
+                    $map: {
+                        input:{ 
+                            $range:[0, {$divide: [{$subtract:[endDate,startDate]}, 1000]}, 60*60*24]
+                        },
+                        in:{
+                            $add:[startDate, {$multiply: ["$$this", 1000]}]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $unwind:"$dateRange"
+        },
+        {
+            $group:{
+                _id:{date:"$dateRange"},
+                count:{$sum:{$cond:[{$eq:["$dateRange","$saleDate"]},1,0]}},
+                sum:{$sum:{$cond:[{$eq:["$dateRange","$saleDate"]},{$divide: [{$subtract:["$closedAt", "$firstSeen"]}, 1000*60*60]},0]}}
+            }
+        },
+        {
+            $sort:{_id:1}
+        },
+        {
+            '$project': {
+                'sessions': '$count',
+                'hours': { $round: [ '$sum', 2 ]},
+                'price': {$round: [{ $multiply: [ {$round: ['$sum', 2]}, 60*0.025 ] }, 2]}
+            },
+        }
+    ]
+);
