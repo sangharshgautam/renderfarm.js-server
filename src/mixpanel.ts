@@ -26,7 +26,7 @@ export class Mixpanel implements IMixpanel {
 
             let url = req.url.replace(/\w{8}\-\w{4}\-\w{4}\-\w{4}\-\w{12}/g, ":guid");
 
-            if (url !== '/v1/session/:guid') {
+            if (url !== '/v1/session/:guid' && !url.startsWith('/v1/session')) {
                 return;
             }
 
