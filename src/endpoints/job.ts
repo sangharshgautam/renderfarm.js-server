@@ -122,13 +122,13 @@ class JobEndpoint implements IEndpoint {
                 return;
             }
 
-            let activeJobs: Job[] = await this._database.getActiveJobs(this._settings.current)
-            if (activeJobs.find(el => el.workerGuid === session.workerGuid)) {
-                console.log(`  FAIL | session busy: ${sessionGuid}`);
-                res.status(404);
-                res.end(JSON.stringify({ ok: false, message: "session busy", error: null }, null, 2));
-                return;
-            }
+            // let activeJobs: Job[] = await this._database.getActiveJobs(this._settings.current)
+            // if (activeJobs.find(el => el.workerGuid === session.workerGuid)) {
+            //     console.log(`  FAIL | session busy: ${sessionGuid}`);
+            //     res.status(404);
+            //     res.end(JSON.stringify({ ok: false, message: "session busy", error: null }, null, 2));
+            //     return;
+            // }
 
             let job = await this._database.createJob(session.apiKeyRef, session.workerGuid, cameraJson, bakeMeshUuid, renderWidth, renderHeight, alpha, renderSettings);
 
