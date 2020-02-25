@@ -53,9 +53,11 @@ myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindin
 myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindingFactory).to(factories.SpotLightBindingFactory).inSingletonScope();
 myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindingFactory).to(factories.PerspectiveCameraBindingFactory).inSingletonScope();
 myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindingFactory).to(factories.MeshBindingFactory).inSingletonScope();
+myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindingFactory).to(factories.SkinnedMeshBindingFactory).inSingletonScope();
 myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindingFactory).to(factories.LineSegmentsBindingFactory).inSingletonScope();
 myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindingFactory).to(factories.Object3DBindingFactory).inSingletonScope();
 myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindingFactory).to(factories.GroupBindingFactory).inSingletonScope();
+myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindingFactory).to(factories.BoneBindingFactory).inSingletonScope();
 
 myContainer.bind<interfaces.IFactory<interfaces.IGeometryCache>>(TYPES.IGeometryCacheFactory).to(factories.GeometryCacheFactory).inSingletonScope();
 myContainer.bind<interfaces.IFactory<interfaces.IMaterialCache>>(TYPES.IMaterialCacheFactory).to(factories.MaterialCacheFactory).inSingletonScope();

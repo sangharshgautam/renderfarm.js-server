@@ -7,6 +7,7 @@ export { BoneBindingFactory } from "./three_maxscript_bindings/bone_binding_fact
 export { SpotLightBindingFactory } from "./three_maxscript_bindings/spotlight_binding_factory";
 export { PerspectiveCameraBindingFactory } from "./three_maxscript_bindings/perspective_camera_binding_factory";
 export { MeshBindingFactory } from "./three_maxscript_bindings/mesh_binding_factory";
+export { SkinnedMeshBindingFactory } from "./three_maxscript_bindings/skinned_mesh_binding_factory";
 export { LineSegmentsBindingFactory } from "./three_maxscript_bindings/line_segments_binding_factory";
 export { GeometryBindingFactory } from "./three_maxscript_bindings/geometry_binding_factory";
 export { MaterialBindingFactory } from "./three_maxscript_bindings/material_binding_factory";
