@@ -13,9 +13,13 @@ const TYPES = {
 
     IGeometryBindingFactory: Symbol.for("IFactory<IGeometryBinding>"),
     IMaterialBindingFactory: Symbol.for("IFactory<IMaterialBinding>"),
+    ITextureBindingFactory: Symbol.for("IFactory<ITextureBinding>"),
+    IImageBindingFactory: Symbol.for("IFactory<IImageBinding>"),
 
     IGeometryCacheFactory: Symbol.for("IFactory<IGeometryCache>"),
     IMaterialCacheFactory: Symbol.for("IFactory<IMaterialCache>"),
+    ITextureCacheFactory: Symbol.for("IFactory<ITextureCache>"),
+    IImageCacheFactory: Symbol.for("IFactory<IImageCache>"),
 
     // services
     IWorkerService: Symbol.for("IWorkerService"),
@@ -25,6 +29,8 @@ const TYPES = {
     IThreeMaxscriptBridgePool: Symbol.for("ISessionPool<IThreeMaxscriptBridge>"),
     IGeometryCachePool: Symbol.for("ISessionPool<IGeometryCache>"),
     IMaterialCachePool: Symbol.for("ISessionPool<IMaterialCache>"),
+    ITextureCachePool: Symbol.for("ISessionPool<ITextureCache>"),
+    IImageCachePool: Symbol.for("ISessionPool<IImageCache>"),
 };
 
 export { TYPES };

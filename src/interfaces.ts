@@ -234,3 +234,39 @@ export interface IMaterialCacheFactory {
     Create(maxscriptClient: IMaxscriptClient): IMaterialCache;
 }
 
+export interface ITextureBinding {
+    readonly ThreeJson: any;
+    Get(): Promise<any>;
+    Post(textureJson: any): Promise<any>;
+    Put(textureJson: any): Promise<any>;
+    Delete(): Promise<any>;
+}
+
+export interface ITextureCache {
+    readonly Textures: {
+        [uuid: string]: ITextureBinding;
+    }
+}
+
+export interface ITextureCacheFactory {
+    Create(maxscriptClient: IMaxscriptClient): ITextureCache;
+}
+
+export interface IImageBinding {
+    readonly ThreeJson: any;
+    Get(): Promise<any>;
+    Post(imageJson: any): Promise<any>;
+    Put(imageJson: any): Promise<any>;
+    Delete(): Promise<any>;
+}
+
+export interface IImageCache {
+    readonly Images: {
+        [uuid: string]: IImageBinding;
+    }
+}
+
+export interface IImageCacheFactory {
+    Create(maxscriptClient: IMaxscriptClient): IImageCache;
+}
+
