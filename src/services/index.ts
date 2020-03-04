@@ -4,4 +4,6 @@ export { WorkerService } from "./worker_service";
 export { MaxScriptClientPool } from "./pools/maxscript_client_pool";
 export { GeometryCachePool } from "./pools/geometry_cache_pool";
 export { MaterialCachePool } from "./pools/material_cache_pool";
+export { TextureCachePool } from "./pools/texture_cache_pool";
+export { ImageCachePool } from "./pools/image_cache_pool";
 export { ThreeMaxscriptBridgePool } from "./pools/three_maxscript_bridge_pool";

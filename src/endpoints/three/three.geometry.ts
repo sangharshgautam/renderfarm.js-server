@@ -99,37 +99,7 @@ class ThreeGeometryEndpoint implements IEndpoint {
                 return;
             }
 
-            function __decompress(compressed) {
-                return new Promise(function(resolve, reject){
-
-                    var zip = new JSZip();
-                    zip.loadAsync(compressed, {base64: true, checkCRC32: true})
-                        .then(function (zip) {
-                            // won't be called
-                            const resolve2 = resolve;
-                            const reject2  = reject;
-
-                            zip.files["BufferGeometry.json"].async("string").then(function(value){
-                                //console.log(` >> extracted: `, value);
-                                resolve2(value);
-
-                            }).catch(function(err){
-                                console.error(err);
-                                reject2(err);
-                            });
-
-                        }, function (err) {
-                            // Error: Corrupted zip : CRC32 mismatch
-                            console.error(err);
-                            reject(err);
-                        });
-
-                }); // == end of Promise
-            }
-
             let geometryJson = plainJson ? JSON.parse(plainJson) : { uuid: uuid, compressed_json: compressedJson } // await __decompress(compressedJson); //LZString.decompressFromBase64(compressedJson);
-
-            let generateUv2 = req.body.generate_uv2;
 
             let makeDownloadUrl = function(this: ThreeGeometryEndpoint, geometryJson: any) {
                 return `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/three/geometry/${geometryJson.uuid}`;
@@ -137,7 +107,7 @@ class ThreeGeometryEndpoint implements IEndpoint {
 
             let geometryCache = await this._geometryCachePool.Get(session);
 
-            let newGeomBinding = await this._geometryBindingFactory.Create(session, geometryJson, generateUv2);
+            let newGeomBinding = await this._geometryBindingFactory.Create(session, geometryJson);
             geometryCache.Geometries[geometryJson.uuid] = newGeomBinding;
             let downloadUrl = makeDownloadUrl(geometryJson);
 

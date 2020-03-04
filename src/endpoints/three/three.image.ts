@@ -1,11 +1,10 @@
 import { injectable, inject } from "inversify";
 import * as express from "express";
-import { IEndpoint, IDatabase, ISettings, IFactory, IMaxscriptClient, IImageCache, ISessionPool, ISessionService, IImageBinding } from "../../interfaces";
+import { IEndpoint, ISettings, IFactory, IImageCache, ISessionPool, ISessionService, IImageBinding } from "../../interfaces";
 import { TYPES } from "../../types";
-import { isArray } from "util";
 import { Session } from "../../database/model/session";
-
-const LZString = require("lz-string");
+import { isArray } from "util";
+var mime = require('mime-types')
 
 @injectable()
 class ThreeImageEndpoint implements IEndpoint {
@@ -26,16 +25,20 @@ class ThreeImageEndpoint implements IEndpoint {
     }
 
     bind(express: express.Application) {
-        express.get(`/v${this._settings.majorVersion}/three/image/:uuid`, async function (this: ThreeImageEndpoint, req, res) {
-            let sessionGuid = req.body.session;
-            console.log(`GET on ${req.path} with session: ${sessionGuid}`);
+        express.get(`/v${this._settings.majorVersion}/three/image/:uuid.:ext`, async function (this: ThreeImageEndpoint, req, res) {
+            console.log(`GET on ${req.path}`);
 
             let uuid = req.params.uuid;
-            console.log(`todo: // retrieve image ${uuid}`);
 
             let imageCache = this._imageCachePool.FindOne(obj => {
                 return Object.keys(obj.Images).indexOf(uuid) !== -1;
             });
+
+            if (!imageCache) {
+                res.status(404);
+                res.end(JSON.stringify({ ok: false, message: "image cache not found", error: null }, null, 2));
+                return;
+            }
 
             let imageBinding = imageCache.Images[uuid];
             if (!imageBinding) {
@@ -44,8 +47,18 @@ class ThreeImageEndpoint implements IEndpoint {
                 return;
             }
 
-            res.status(200);
-            res.end(JSON.stringify(imageBinding.ThreeJson));
+            var regex = /^data:.+\/(.+);base64,(.*)$/;
+            var matches = imageBinding.ThreeJson.url.match(regex);
+            var ext = matches[1];
+            var data = matches[2];
+            var buffer = Buffer.from(data, 'base64');
+
+            res.writeHead(200, {
+                'Content-Type': mime.lookup('ext'),
+                'Content-Disposition': `attachment; filename=${uuid}.${ext}`,
+                'Content-Length': buffer.length
+            });
+            res.end(buffer);
         }.bind(this));
 
         express.post(`/v${this._settings.majorVersion}/three/image`, async function (this: ThreeImageEndpoint, req, res) {
@@ -53,8 +66,10 @@ class ThreeImageEndpoint implements IEndpoint {
             console.log(`POST on ${req.path} with session: ${sessionGuid}`);
 
             // check that session is actually open
-            let session: Session = await this._sessionService.GetSession(sessionGuid, false, false);
+            let session: Session = await this._sessionService.GetSession(sessionGuid, false, true);
             if (!session) {
+                res.status(404);
+                res.end(JSON.stringify({ ok: false, message: "session expired", error: null }, null, 2));
                 return;
             }
 
@@ -65,43 +80,36 @@ class ThreeImageEndpoint implements IEndpoint {
                 return;
             }
 
-            let compressedJson = req.body.compressed_json; // this is to create scene or add new obejcts to scene
-            if (!compressedJson) {
+            let imageJson: any = req.body.json; // this is uncompressed json
+            if (!imageJson) {
                 res.status(400);
-                res.end(JSON.stringify({ ok: false, message: "missing compressed_json", error: null }, null, 2));
+                res.end(JSON.stringify({ ok: false, message: "body missing .json", error: null }, null, 2));
                 return;
             }
 
-            let imageJsonText = LZString.decompressFromBase64(compressedJson);
-            let imageJson: any = JSON.parse(imageJsonText);
-
-            console.log(` >> received new image json: `, imageJson);
+            if (!isArray(imageJson)) {
+                imageJson = [ imageJson ];
+            }
 
             let makeDownloadUrl = function(this: ThreeImageEndpoint, imageJson: any) {
-                return `${this._settings.current.host}:${this._settings.current.port}/v${this._settings.majorVersion}/three/image/${imageJson.uuid}`;
+                return `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/three/image/${imageJson.uuid}.${imageJson.ext}`;
             }.bind(this);
 
+            const downloadUrls = [];
             let imageCache = await this._imageCachePool.Get(session);
+            var regex = /^data:.+\/(.+);base64,(.*)$/;
 
-            if (isArray(imageJson)) {
-                let data = [];
-                for (let i in imageJson) {
-                    let newImageBinding = await this._imageBindingFactory.Create(session, imageJson[i]);
-                    imageCache.Images[imageJson[i].uuid] = newImageBinding;
-                    let downloadUrl = makeDownloadUrl(imageJson[i]);
-                    data.push(downloadUrl);
-                }
-
-                res.status(201);
-                res.end(JSON.stringify({ ok: true, type: "url", data: data }));
-            } else {
-                let newImageBinding = await this._imageBindingFactory.Create(session, imageJson);
-                imageCache.Images[imageJson.uuid] = newImageBinding;
-                let downloadUrl = makeDownloadUrl(imageJson);
-    
-                res.status(201);
-                res.end(JSON.stringify({ ok: true, type: "url", data: [ downloadUrl ] }));
+            for (let i of imageJson) {
+                var matches = i.url.match(regex);
+                i.ext = matches[1];
+                let newImageBinding = await this._imageBindingFactory.Create(session, i);
+                imageCache.Images[i.uuid] = newImageBinding;
+                let downloadUrl = makeDownloadUrl(i);
+                downloadUrls.push(downloadUrl);
             }
+    
+            res.status(201);
+            res.end(JSON.stringify({ ok: true, type: "url", data: downloadUrls }));
         }.bind(this));
 
         express.put(`/v${this._settings.majorVersion}/three/image/:uuid`, async function (this: ThreeImageEndpoint, req, res) {

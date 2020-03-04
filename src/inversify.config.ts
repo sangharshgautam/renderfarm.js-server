@@ -33,6 +33,7 @@ myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.RenderOutpu
 myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.ThreeObjectEndpoint).inSingletonScope();
 myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.ThreeGeometryEndpoint).inSingletonScope();
 myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.ThreeMaterialEndpoint).inSingletonScope();
+myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.ThreeImageEndpoint).inSingletonScope();
 
 // services
 myContainer.bind<interfaces.IWorkerService>(TYPES.IWorkerService).to(services.WorkerService).inSingletonScope();
@@ -44,6 +45,8 @@ myContainer.bind<interfaces.ISessionPool<interfaces.IMaxscriptClient>>(TYPES.IMa
 myContainer.bind<interfaces.ISessionPool<interfaces.IThreeMaxscriptBridge>>(TYPES.IThreeMaxscriptBridgePool).to(services.ThreeMaxscriptBridgePool).inSingletonScope();
 myContainer.bind<interfaces.ISessionPool<interfaces.IGeometryCache>>(TYPES.IGeometryCachePool).to(services.GeometryCachePool).inSingletonScope();
 myContainer.bind<interfaces.ISessionPool<interfaces.IMaterialCache>>(TYPES.IMaterialCachePool).to(services.MaterialCachePool).inSingletonScope();
+myContainer.bind<interfaces.ISessionPool<interfaces.ITextureCache>>(TYPES.ITextureCachePool).to(services.TextureCachePool).inSingletonScope();
+myContainer.bind<interfaces.ISessionPool<interfaces.IImageCache>>(TYPES.IImageCachePool).to(services.ImageCachePool).inSingletonScope();
 
 // factories
 myContainer.bind<interfaces.IFactory<interfaces.IMaxscriptClient>>(TYPES.IMaxscriptClientFactory).to(factories.MaxscriptClientFactory).inSingletonScope();
@@ -61,9 +64,12 @@ myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindin
 
 myContainer.bind<interfaces.IFactory<interfaces.IGeometryCache>>(TYPES.IGeometryCacheFactory).to(factories.GeometryCacheFactory).inSingletonScope();
 myContainer.bind<interfaces.IFactory<interfaces.IMaterialCache>>(TYPES.IMaterialCacheFactory).to(factories.MaterialCacheFactory).inSingletonScope();
+myContainer.bind<interfaces.IFactory<interfaces.IImageCache>>(TYPES.IImageCacheFactory).to(factories.ImageCacheFactory).inSingletonScope();
+myContainer.bind<interfaces.IFactory<interfaces.ITextureCache>>(TYPES.ITextureCacheFactory).to(factories.TextureCacheFactory).inSingletonScope();
 
 myContainer.bind<interfaces.IFactory<interfaces.IGeometryBinding>>(TYPES.IGeometryBindingFactory).to(factories.GeometryBindingFactory).inSingletonScope();
 myContainer.bind<interfaces.IFactory<interfaces.IMaterialBinding>>(TYPES.IMaterialBindingFactory).to(factories.MaterialBindingFactory).inSingletonScope();
+myContainer.bind<interfaces.IFactory<interfaces.IImageBinding>>(TYPES.IImageBindingFactory).to(factories.ImageBindingFactory).inSingletonScope();
 
 // tip: this is how to export same instance with different interfaces
 // EXAMPLE: myContainer.bind<ISessionObserver>(TYPES.ISessionObserver).toService(TYPES.ISessionObserver);
