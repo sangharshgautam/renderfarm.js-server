@@ -20,6 +20,6 @@ export class BoneBindingFactory implements ISceneObjectBindingFactory {
     public async Create(session: Session): Promise<ISceneObjectBinding>
     {
         let maxscript: IMaxscriptClient = await this._maxscriptClientPool.Get(session);
-        return new BoneBinding(maxscript, null, null, session.workspaceRef);
+        return new BoneBinding(maxscript, null, null, null, null, session.workspaceRef);
     }
 }

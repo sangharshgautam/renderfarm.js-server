@@ -1,10 +1,12 @@
-import { ISceneObjectBinding, IMaxscriptClient, IGeometryCache, IMaterialCache } from "../../interfaces";
+import { ISceneObjectBinding, IMaxscriptClient, IGeometryCache, IMaterialCache, IImageCache, ITextureCache } from "../../interfaces";
 import { Workspace } from "../../database/model/workspace";
 
 export abstract class SceneObjectBindingBase implements ISceneObjectBinding {
     protected _maxscriptClient: IMaxscriptClient;
     protected _geometryCache: IGeometryCache;
     protected _materialCache: IMaterialCache;
+    protected _textureCache: ITextureCache;
+    protected _imageCache: IImageCache;
     protected _workspace: Workspace;
 
     protected _objectJson: any;
@@ -16,11 +18,15 @@ export abstract class SceneObjectBindingBase implements ISceneObjectBinding {
         maxscriptClient: IMaxscriptClient,
         geometryCache?: IGeometryCache,
         materialCache?: IMaterialCache,
+        textureCache?: ITextureCache,
+        imageCache?: IImageCache,
         workspace?: Workspace,
     ) {
         this._maxscriptClient = maxscriptClient;
         this._geometryCache = geometryCache;
         this._materialCache = materialCache;
+        this._textureCache = textureCache;
+        this._imageCache = imageCache;
         this._workspace = workspace;
     }
 

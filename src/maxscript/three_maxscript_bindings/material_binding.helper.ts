@@ -1,4 +1,6 @@
 const MaterialTypes = {
+    // to see supported materials: print superclasses[27].classes, and m = VRayMtl(); showProperties m;
+
     VRayMtl: {
         diffuse: "RGB color",
         diffuse_roughness: "float",

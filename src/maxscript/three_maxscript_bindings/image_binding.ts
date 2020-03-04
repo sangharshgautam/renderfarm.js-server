@@ -1,4 +1,5 @@
 import { IImageBinding, PostResult, IMaxscriptClient } from "../../interfaces";
+var mime = require('mime-types')
 
 export class ImageBinding implements IImageBinding {
     private _maxscriptClient: IMaxscriptClient;
@@ -20,8 +21,21 @@ export class ImageBinding implements IImageBinding {
         throw new Error("Method not implemented.");
     }
 
-    public async Post(imageJson: any): Promise<PostResult> {
-        throw new Error("Method not implemented.");
+    public async Post(): Promise<PostResult> {
+        console.log(` >> image binding Post: `, this._imageJson);
+
+        const downloadUrl = this._imageJson.downloadUrl;
+        const mimeType = mime.lookup(this._imageJson.fileExt);
+
+        let tempDir = `C:\\\\Temp`;
+        const path = `${tempDir}\\\\${this._imageJson.uuid}.${this._imageJson.fileExt}`;
+
+        console.log(` >> tell 3dsmax to download from ${downloadUrl} into ${path}`);
+        await this._maxscriptClient.downloadFile(downloadUrl, path, mimeType);
+
+        return Promise.resolve({
+            path
+        });
     }
 
     public async Put(imageJson: any): Promise<any> {

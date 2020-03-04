@@ -65,43 +65,35 @@ class ThreeTextureEndpoint implements IEndpoint {
                 return;
             }
 
-            let compressedJson = req.body.compressed_json; // this is to create scene or add new obejcts to scene
-            if (!compressedJson) {
+            let textureJson = req.body.json; // this is to create scene or add new obejcts to scene
+            if (!textureJson) {
                 res.status(400);
-                res.end(JSON.stringify({ ok: false, message: "missing compressed_json", error: null }, null, 2));
+                res.end(JSON.stringify({ ok: false, message: "missing json", error: null }, null, 2));
                 return;
             }
 
-            let textureJsonText = LZString.decompressFromBase64(compressedJson);
-            let textureJson: any = JSON.parse(textureJsonText);
-
             console.log(` >> received new texture json: `, textureJson);
 
+            if (!isArray(textureJson)) {
+                textureJson = [textureJson];
+            }
+
             let makeDownloadUrl = function(this: ThreeTextureEndpoint, textureJson: any) {
-                return `${this._settings.current.host}:${this._settings.current.port}/v${this._settings.majorVersion}/three/texture/${textureJson.uuid}`;
+                return `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/three/texture/${textureJson.uuid}`;
             }.bind(this);
 
             let textureCache = await this._textureCachePool.Get(session);
 
-            if (isArray(textureJson)) {
-                let data = [];
-                for (let i in textureJson) {
-                    let newTextureBinding = await this._textureBindingFactory.Create(session, textureJson[i]);
-                    textureCache.Textures[textureJson[i].uuid] = newTextureBinding;
-                    let downloadUrl = makeDownloadUrl(textureJson[i]);
-                    data.push(downloadUrl);
-                }
-
-                res.status(201);
-                res.end(JSON.stringify({ ok: true, type: "url", data: data }));
-            } else {
-                let newTextureBinding = await this._textureBindingFactory.Create(session, textureJson);
-                textureCache.Textures[textureJson.uuid] = newTextureBinding;
-                let downloadUrl = makeDownloadUrl(textureJson);
-    
-                res.status(201);
-                res.end(JSON.stringify({ ok: true, type: "url", data: [ downloadUrl ] }));
+            let downloadUrls = [];
+            for (let i in textureJson) {
+                let newTextureBinding = await this._textureBindingFactory.Create(session, textureJson[i]);
+                textureCache.Textures[textureJson[i].uuid] = newTextureBinding;
+                let downloadUrl = makeDownloadUrl(textureJson[i]);
+                downloadUrls.push(downloadUrl);
             }
+
+            res.status(201);
+            res.end(JSON.stringify({ ok: true, type: "url", data: downloadUrls }));
         }.bind(this));
 
         express.put(`/v${this._settings.majorVersion}/three/texture/:uuid`, async function (this: ThreeTextureEndpoint, req, res) {

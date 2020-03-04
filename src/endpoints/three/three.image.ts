@@ -48,13 +48,13 @@ class ThreeImageEndpoint implements IEndpoint {
             }
 
             var regex = /^data:.+\/(.+);base64,(.*)$/;
-            var matches = imageBinding.ThreeJson.url.match(regex);
+            var matches = imageBinding.ThreeJson.dataUrl.match(regex);
             var ext = matches[1];
             var data = matches[2];
             var buffer = Buffer.from(data, 'base64');
 
             res.writeHead(200, {
-                'Content-Type': mime.lookup('ext'),
+                'Content-Type': mime.lookup(ext),
                 'Content-Disposition': `attachment; filename=${uuid}.${ext}`,
                 'Content-Length': buffer.length
             });
@@ -91,20 +91,28 @@ class ThreeImageEndpoint implements IEndpoint {
                 imageJson = [ imageJson ];
             }
 
-            let makeDownloadUrl = function(this: ThreeImageEndpoint, imageJson: any) {
-                return `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/three/image/${imageJson.uuid}.${imageJson.ext}`;
+            let makeDownloadUrl = function(this: ThreeImageEndpoint, imageJson: any, fileExt: string) {
+                return `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/three/image/${imageJson.uuid}.${fileExt}`;
             }.bind(this);
 
             const downloadUrls = [];
             let imageCache = await this._imageCachePool.Get(session);
             var regex = /^data:.+\/(.+);base64,(.*)$/;
 
-            for (let i of imageJson) {
-                var matches = i.url.match(regex);
-                i.ext = matches[1];
-                let newImageBinding = await this._imageBindingFactory.Create(session, i);
-                imageCache.Images[i.uuid] = newImageBinding;
-                let downloadUrl = makeDownloadUrl(i);
+            for (let json of imageJson) {
+                var matches = json.url.match(regex);
+                const fileExt = matches[1];
+                let downloadUrl = makeDownloadUrl(json, fileExt);
+                let newImageBinding = await this._imageBindingFactory.Create(
+                    session,
+                    {
+                        uuid: json.uuid,
+                        dataUrl: json.url,
+                        fileExt: fileExt,
+                        downloadUrl,
+                    }
+                );
+                imageCache.Images[json.uuid] = newImageBinding;
                 downloadUrls.push(downloadUrl);
             }
     

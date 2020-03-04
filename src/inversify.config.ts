@@ -33,6 +33,7 @@ myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.RenderOutpu
 myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.ThreeObjectEndpoint).inSingletonScope();
 myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.ThreeGeometryEndpoint).inSingletonScope();
 myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.ThreeMaterialEndpoint).inSingletonScope();
+myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.ThreeTextureEndpoint).inSingletonScope();
 myContainer.bind<interfaces.IEndpoint>(TYPES.IEndpoint).to(endpoints.ThreeImageEndpoint).inSingletonScope();
 
 // services
@@ -64,11 +65,12 @@ myContainer.bind<interfaces.ISceneObjectBindingFactory>(TYPES.ISceneObjectBindin
 
 myContainer.bind<interfaces.IFactory<interfaces.IGeometryCache>>(TYPES.IGeometryCacheFactory).to(factories.GeometryCacheFactory).inSingletonScope();
 myContainer.bind<interfaces.IFactory<interfaces.IMaterialCache>>(TYPES.IMaterialCacheFactory).to(factories.MaterialCacheFactory).inSingletonScope();
-myContainer.bind<interfaces.IFactory<interfaces.IImageCache>>(TYPES.IImageCacheFactory).to(factories.ImageCacheFactory).inSingletonScope();
 myContainer.bind<interfaces.IFactory<interfaces.ITextureCache>>(TYPES.ITextureCacheFactory).to(factories.TextureCacheFactory).inSingletonScope();
+myContainer.bind<interfaces.IFactory<interfaces.IImageCache>>(TYPES.IImageCacheFactory).to(factories.ImageCacheFactory).inSingletonScope();
 
 myContainer.bind<interfaces.IFactory<interfaces.IGeometryBinding>>(TYPES.IGeometryBindingFactory).to(factories.GeometryBindingFactory).inSingletonScope();
 myContainer.bind<interfaces.IFactory<interfaces.IMaterialBinding>>(TYPES.IMaterialBindingFactory).to(factories.MaterialBindingFactory).inSingletonScope();
+myContainer.bind<interfaces.IFactory<interfaces.ITextureBinding>>(TYPES.ITextureBindingFactory).to(factories.TextureBindingFactory).inSingletonScope();
 myContainer.bind<interfaces.IFactory<interfaces.IImageBinding>>(TYPES.IImageBindingFactory).to(factories.ImageBindingFactory).inSingletonScope();
 
 // tip: this is how to export same instance with different interfaces

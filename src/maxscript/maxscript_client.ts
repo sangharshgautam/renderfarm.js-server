@@ -1,4 +1,4 @@
-import { IMaxscriptClient, IBakeTexturesFilenames, ISettings } from "../interfaces";
+import { IMaxscriptClient, IBakeTexturesFilenames, ISettings, ITextureVars } from "../interfaces";
 import { Socket } from "net";
 import { Workspace } from "../database/model/workspace";
 
@@ -314,7 +314,46 @@ fullpath = (dir + "\\" + filename)
         return this.execMaxscript(maxscript, "createSkylight");
     }
 
-    createMaterial(materialName: string, materialType: string, materialParams: any): Promise<boolean> {
+    createBitmapTexture(maxName: string, threeJson: any, filepath: string, varName: string): Promise<boolean> {
+        console.log(` >> createBitmapTexture: `, maxName, threeJson, filepath, varName);
+
+        /*
+            b = BitmapTexture()
+            Bitmaptexture:Bitmap
+            showProperties b
+            .clipu (Clip_U_Offset) : float
+            .clipv (Clip_V_Offset) : float
+            .clipw (Clip_U_Width) : float
+            .cliph (Clip_V_Width) : float
+            .jitter (Jitter_Placement) : float
+            .useJitter : boolean
+            .apply : boolean
+            .cropPlace : integer
+            .filtering : integer
+            .monoOutput : integer
+            .rgbOutput : integer
+            .alphaSource : integer
+            .preMultAlpha : boolean
+            .bitmap : bitmap
+            .coords (Coordinates) : maxObject
+            .output : maxObject
+            .fileName (File_Name) : filename
+            .startTime : time
+            .playBackRate : float
+            .endCondition : integer
+            .tieTimeToMatIDs (Tie_Time_to_Mat_IDs) : boolean
+            false
+        */
+        const maxscript = `${varName} = BitmapTexture name:"${maxName}" fileName:"${filepath}"; \r\n`
+                        + `${varName}.fileName`;
+
+       console.log(` >> creating BitmapTexture: \r\n`);
+       console.log(" >> maxscript: " + maxscript);
+
+       return this.execMaxscript(maxscript, "createBitmapTexture");
+   }
+
+    createMaterial(materialName: string, materialType: string, materialParams: any, textureVars: ITextureVars): Promise<boolean> {
         console.log(` >> createMaterial: `, materialName, materialType, materialParams);
 
         const supportedMaterialTypes = [
@@ -344,6 +383,11 @@ fullpath = (dir + "\\" + filename)
             maxscript += `mat.${key} = ${value} ; \r\n`
         }
 
+        if (textureVars.map) {
+            maxscript += `mat.texmap_diffuse = ${textureVars.map} ; \r\n`
+            maxscript += `mat.texmap_diffuse_on = on ; \r\n`
+        }
+
         console.log(` >> creating material: \r\n`);
         console.log(" >> maxscript: " + maxscript);
 
@@ -361,11 +405,11 @@ fullpath = (dir + "\\" + filename)
         return this.execMaxscript(maxscript, "downloadJson");
     }
 
-    downloadFile(url: string, path: string): Promise<boolean> {
+    downloadFile(url: string, path: string, mimeType: string): Promise<boolean> {
         console.log(" >> Downloading file from:\n" + url);
 
         const curlPath = "C:\\\\bin\\\\curl";
-        let maxscript = `cmdexRun "${curlPath} -k -s -H \\\"Accept: application/octet-stream\\\" \\\"${url}\\\" -o \\\"${path}\\\" "`;
+        let maxscript = `cmdexRun "${curlPath} -k -s -H \\\"Accept: ${mimeType}\\\" \\\"${url}\\\" -o \\\"${path}\\\" "`;
 
         console.log(" >> maxscript: " + maxscript);
 

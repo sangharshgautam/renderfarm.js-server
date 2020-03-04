@@ -20,11 +20,11 @@ export class TextureCachePool extends SessionPoolBase<ITextureCache> {
 
     public id: number;
 
-    protected async onBeforeItemAdd(session: Session, materialCache: ITextureCache): Promise<boolean> {
+    protected async onBeforeItemAdd(session: Session, textureCache: ITextureCache): Promise<boolean> {
         return true;
     }
 
-    protected async onBeforeItemRemove(closedSession: Session, materialCache: ITextureCache): Promise<any> {
+    protected async onBeforeItemRemove(closedSession: Session, textureCache: ITextureCache): Promise<any> {
         // do nothing
     }
 }

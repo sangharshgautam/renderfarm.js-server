@@ -11,8 +11,9 @@ export { SkinnedMeshBindingFactory } from "./three_maxscript_bindings/skinned_me
 export { LineSegmentsBindingFactory } from "./three_maxscript_bindings/line_segments_binding_factory";
 export { GeometryBindingFactory } from "./three_maxscript_bindings/geometry_binding_factory";
 export { MaterialBindingFactory } from "./three_maxscript_bindings/material_binding_factory";
+export { TextureBindingFactory } from "./three_maxscript_bindings/texture_binding_factory";
 export { ImageBindingFactory } from "./three_maxscript_bindings/image_binding_factory";
 export { GeometryCacheFactory } from "./geometry_cache_factory";
 export { MaterialCacheFactory } from "./material_cache_factory";
-export { ImageCacheFactory } from "./image_cache_factory";
 export { TextureCacheFactory } from "./texture_cache_factory";
+export { ImageCacheFactory } from "./image_cache_factory";

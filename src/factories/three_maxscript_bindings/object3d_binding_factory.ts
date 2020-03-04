@@ -20,6 +20,6 @@ export class Object3DBindingFactory implements ISceneObjectBindingFactory {
     public async Create(session: Session): Promise<ISceneObjectBinding>
     {
         let maxscript: IMaxscriptClient = await this._maxscriptClientPool.Get(session);
-        return new Object3DBinding(maxscript, null, null, session.workspaceRef);
+        return new Object3DBinding(maxscript, null, null, null, null, session.workspaceRef);
     }
 }

@@ -101,14 +101,16 @@ export interface IMaxscriptClient {
     cloneInstance(nodeName: string, cloneName: string): Promise<boolean>;
 
     createSpotlight(spotlightJson: any): Promise<boolean>;
-    createMaterial(materialName: string, materialType: string, materialParams: any): Promise<boolean>;
+
+    createBitmapTexture(maxName: string, varName: string, threeJson: any, filepath: string): Promise<boolean>;
+    createMaterial(materialName: string, materialType: string, materialParams: any, textureVars: ITextureVars): Promise<boolean>;
 
     downloadJson(url: string, path: string): Promise<boolean>;
 
     importMesh(path: string, nodeName: string): Promise<boolean>;
     exportMesh(path: string, nodeName: string, uuid: string): Promise<boolean>;
 
-    downloadFile(url: string, path: string): Promise<boolean>;
+    downloadFile(url: string, path: string, mimeType: string): Promise<boolean>;
     uploadFile(url: string, path: string): Promise<boolean>;
     extractZip(fullpath: string, destDir: string): Promise<boolean>;
 
@@ -184,6 +186,7 @@ export interface ISceneObjectBinding {
 
 export interface PostResult {
     url?: string; // is set when posted geometry was unwrapped
+    path?: string; // where file is uploaded
 }
 
 export interface ISceneObjectBindingFactory extends IFactory<ISceneObjectBinding> {
@@ -216,10 +219,21 @@ export interface IGeometryCacheFactory {
     Create(maxscriptClient: IMaxscriptClient): IGeometryCache;
 }
 
+export interface ITextureVars {
+    map: string;
+    alphaMap: string;
+    bumpMap: string;
+    displacementMap: string;
+    emissiveMap: string;
+    metalnessMap: string;
+    normalMap: string;
+    roughnessMap: string;
+}
+
 export interface IMaterialBinding {
     readonly ThreeJson: any;
     Get(): Promise<any>;
-    Post(materialJson: any): Promise<any>;
+    Post(materialJson: any, textureVars: ITextureVars): Promise<any>;
     Put(materialJson: any): Promise<any>;
     Delete(): Promise<any>;
 }
@@ -237,8 +251,8 @@ export interface IMaterialCacheFactory {
 export interface ITextureBinding {
     readonly ThreeJson: any;
     Get(): Promise<any>;
-    Post(textureJson: any): Promise<any>;
-    Put(textureJson: any): Promise<any>;
+    Post(filepath: string, varName: string): Promise<any>;
+    Put(textureJson: any, filepath: string, varName: string): Promise<any>;
     Delete(): Promise<any>;
 }
 
@@ -255,7 +269,7 @@ export interface ITextureCacheFactory {
 export interface IImageBinding {
     readonly ThreeJson: any;
     Get(): Promise<any>;
-    Post(imageJson: any): Promise<any>;
+    Post(): Promise<any>;
     Put(imageJson: any): Promise<any>;
     Delete(): Promise<any>;
 }

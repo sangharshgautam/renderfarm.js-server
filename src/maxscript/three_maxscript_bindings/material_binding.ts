@@ -1,4 +1,4 @@
-import { IMaterialBinding, IMaxscriptClient, PostResult } from "../../interfaces";
+import { IMaterialBinding, IMaxscriptClient, PostResult, ITextureVars } from "../../interfaces";
 import { parseMaterialProperty } from "./material_binding.helper";
 
 export class MaterialBinding implements IMaterialBinding {
@@ -22,7 +22,7 @@ export class MaterialBinding implements IMaterialBinding {
         throw new Error("Method not implemented.");
     }
 
-    public async Post(materialJson: any): Promise<PostResult> {
+    public async Post(materialJson: any, textureVars: ITextureVars): Promise<PostResult> {
         this._materialJson = materialJson;
 
         console.log(" >> MaterialBinding takes json, and sends it to remote maxscript: ", this._materialJson);
@@ -44,7 +44,7 @@ export class MaterialBinding implements IMaterialBinding {
 
         delete this._materialJson["$"];
 
-        await this._maxscriptClient.createMaterial(matName, this._materialJson.type, this._materialJson.params);
+        await this._maxscriptClient.createMaterial(matName, this._materialJson.type, this._materialJson.params, textureVars);
 
         return {
         };
