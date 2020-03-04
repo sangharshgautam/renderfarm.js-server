@@ -56,9 +56,22 @@ export class MeshBinding extends SceneObjectBindingBase {
 
             console.log(` >> mesh binding, considering material`);
             if (material && material.ThreeJson && material.ThreeJson.name) {
-                let materialName = material.ThreeJson.name;
-                console.log(` >> material will be assigned: `, materialName);
-                await this._maxscriptClient.assignMaterial(meshName, materialName);
+                if (objectJson.userData && objectJson.userData.materialJson) {
+                    // to see supported materials: print superclasses[27].classes
+                    let materialName = this.getObjectName(objectJson.userData.materialJson);
+
+                    objectJson.userData.materialJson["$"] = material.ThreeJson;
+
+                    console.log(` >> material will be created from userData: `, materialName);
+                    await material.Post(objectJson.userData.materialJson);
+
+                    console.log(` >> material will be assigned: `, materialName);
+                    await this._maxscriptClient.assignMaterial(meshName, materialName);
+                } else {
+                    let materialName = material.ThreeJson.name;
+                    console.log(` >> material will be assigned: `, materialName);
+                    await this._maxscriptClient.assignMaterial(meshName, materialName);
+                }
             }
     
             if (Array.isArray(material)) {

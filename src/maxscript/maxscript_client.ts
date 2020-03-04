@@ -314,33 +314,38 @@ fullpath = (dir + "\\" + filename)
         return this.execMaxscript(maxscript, "createSkylight");
     }
 
-    createMaterial(materialJson: any): Promise<boolean> {
-        let diffuse = {
-            r: (materialJson.color >> 16) & 0xFF,
-            g: (materialJson.color >> 8)  & 0xFF,
-            b: (materialJson.color)       & 0xFF
-        };
+    createMaterial(materialName: string, materialType: string, materialParams: any): Promise<boolean> {
+        console.log(` >> createMaterial: `, materialName, materialType, materialParams);
 
-        let specular = {
-            r: (materialJson.specular >> 16) & 0xFF,
-            g: (materialJson.specular >> 8)  & 0xFF,
-            b: (materialJson.specular)       & 0xFF
-        };
+        const supportedMaterialTypes = [
+            'StandardMaterial',
+            'MatteShadow',
+            'InkNPaint',
+            'RaytraceMaterial',
+            'VRayMtl',
+            'VRayCarPaintMtl',
+            'PhysicalMaterial',
+        ];
 
-        let emissive = {
-            r: (materialJson.emissive >> 16) & 0xFF,
-            g: (materialJson.emissive >> 8)  & 0xFF,
-            b: (materialJson.emissive)       & 0xFF
-        };
+        if (!supportedMaterialTypes.includes(materialType)) {
+            return Promise.resolve(false);
+        }
 
-        let maxscript = `StandardMaterial name:"${materialJson.name}" ` 
-                        + ` diffuse: (color ${diffuse.r}  ${diffuse.g}  ${diffuse.b}) `
-                        + ` specular:(color ${specular.r} ${specular.g} ${specular.b}) `
-                        + ` emissive:(color ${emissive.r} ${emissive.g} ${emissive.b}) `
-                        + ` opacity: ${materialJson.opacity !== undefined ? 100 * materialJson.opacity : 100} `
-                        + ` glossiness: ${materialJson.shininess !== undefined ? materialJson.shininess : 30} `
-                        + ` specularLevel: 75 `
-                        + ` shaderType: 5 `; // for Phong
+        let maxscript = `mat = rayysFindMaterialByName "${materialName}" ; \r\n`
+                      + `if mat != false then ( \r\n`
+                      + `  -- do nothing \r\n`
+                      //   do not create it, as this material exist
+                      + `) else ( \r\n`
+                      + `  mat = ${materialType} name:"${materialName}" ; \r\n`
+                      + `) \r\n`
+
+        for (let key in materialParams) {
+            const value = materialParams[key];
+            maxscript += `mat.${key} = ${value} ; \r\n`
+        }
+
+        console.log(` >> creating material: \r\n`);
+        console.log(" >> maxscript: " + maxscript);
 
         return this.execMaxscript(maxscript, "createMaterial");
     }

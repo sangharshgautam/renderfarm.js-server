@@ -101,7 +101,7 @@ export interface IMaxscriptClient {
     cloneInstance(nodeName: string, cloneName: string): Promise<boolean>;
 
     createSpotlight(spotlightJson: any): Promise<boolean>;
-    createMaterial(materialJson: any): Promise<boolean>;
+    createMaterial(materialName: string, materialType: string, materialParams: any): Promise<boolean>;
 
     downloadJson(url: string, path: string): Promise<boolean>;
 
