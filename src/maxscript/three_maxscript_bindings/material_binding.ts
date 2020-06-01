@@ -50,6 +50,34 @@ export class MaterialBinding implements IMaterialBinding {
         };
     }
 
+    public async Patch(materialJson: any, textureVars: ITextureVars): Promise<PostResult> {
+        this._materialJson = materialJson;
+
+        console.log(" >> MaterialBinding takes json, and sends it to remote maxscript: ", this._materialJson);
+
+        let matName = this.getObjectName(this._materialJson);
+        console.log(" >> MaterialBinding find matName: ", matName);
+
+        const keys = Object.keys(this._materialJson.params);
+        for (let key of keys) {
+            const value = this._materialJson.params[key];
+            if (typeof value === "string") {
+                const maxscriptValue = "( " + value.replace(/\\/g, "\\\\") + " )";
+                this._materialJson.params[key] = maxscriptValue;
+            } else {
+                const maxscriptValue = "( " + value + " )";
+                this._materialJson.params[key] = maxscriptValue;
+            }
+        }
+
+        delete this._materialJson["$"];
+
+        await this._maxscriptClient.updateMaterial(matName, this._materialJson.params, textureVars);
+
+        return {
+        };
+    }
+
     public async Put(materialJson: any): Promise<any> {
         throw new Error("Method not implemented.");
     }

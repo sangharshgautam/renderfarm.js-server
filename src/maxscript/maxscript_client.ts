@@ -353,7 +353,7 @@ fullpath = (dir + "\\" + filename)
        return this.execMaxscript(maxscript, "createBitmapTexture");
    }
 
-    createMaterial(materialName: string, materialType: string, materialParams: any, textureVars: ITextureVars): Promise<boolean> {
+    createMaterial(materialName: string, materialType: string, materialParams: any, textureVars?: ITextureVars): Promise<boolean> {
         console.log(` >> createMaterial: `, materialName, materialType, materialParams);
 
         const supportedMaterialTypes = [
@@ -392,6 +392,30 @@ fullpath = (dir + "\\" + filename)
         console.log(" >> maxscript: " + maxscript);
 
         return this.execMaxscript(maxscript, "createMaterial");
+    }
+
+    updateMaterial(materialName: string, materialParams: any, textureVars?: ITextureVars): Promise<boolean> {
+        console.log(` >> updateMaterial: `, materialName, materialParams);
+
+        let maxscript = `mat = rayysFindMaterialByName "${materialName}" ; \r\n`
+                      + `if mat != false then ( \r\n`; // == Start of IF block
+        {
+            for (let key in materialParams) {
+                const value = materialParams[key];
+                maxscript += `mat.${key} = ${value} ; \r\n`
+            }
+
+            if (textureVars.map) {
+                maxscript += `mat.texmap_diffuse = ${textureVars.map} ; \r\n`
+                maxscript += `mat.texmap_diffuse_on = on ; \r\n`
+            }
+        }
+        maxscript +=    `)\r\n`; // == End of IF block
+
+        console.log(` >> updating material: \r\n`);
+        console.log(" >> maxscript: " + maxscript);
+
+        return this.execMaxscript(maxscript, "updateMaterial");
     }
 
     downloadJson(url: string, path: string): Promise<boolean> {
@@ -458,11 +482,21 @@ fullpath = (dir + "\\" + filename)
         return this.execMaxscript(maxscript, "exportMesh");
     }
 
-    assignMaterial(nodeName: string, materialName: string): Promise<boolean> {
-        let maxscript = `mat = rayysFindMaterialByName "${materialName}"; `
+    assignMaterial(nodeName: string, materialName: string, materialCopyName?: string): Promise<boolean> {
+        let maxscript = "";
+        if (materialCopyName) { // material must be cloned and renamed (not reuse existing one)
+            maxscript = `mat = rayysFindMaterialByName "${materialName}"; `
+                        + `if (mat != false) then ( \r\n`
+                        + `  matCopy = copy mat; `
+                        + `  matCopy.name = "${materialCopyName}"; `
+                        + `  $${nodeName}.Material = matCopy; \r\n`
+                        + `) `;
+        } else {
+            maxscript = `mat = rayysFindMaterialByName "${materialName}"; `
                         + `if (mat != false) then (`
                         + `  $${nodeName}.Material = mat`
                         + `) `;
+        }
 
         return this.execMaxscript(maxscript, "assignMaterial");
     }

@@ -65,11 +65,15 @@ class App implements IApp {
             next();
         });
 
-        this._express.use(timeout(15*60*1000));
+        this._express.use(timeout("900s"));
         this._express.use(haltOnTimedout);
 
         function haltOnTimedout(req, res, next){
-            if (!req.timedout) next();
+            if (!req.timedout) {
+                next();
+            } else {
+                console.log(` >> haltOnTimedout`);
+            }
         }
     }
 
