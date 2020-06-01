@@ -12,11 +12,11 @@ class ThreeObjectEndpoint implements IEndpoint {
     private _sessionService: ISessionService;
     private _threeMaxscriptBridgePool: ISessionPool<IThreeMaxscriptBridge>;
 
-    private _objects: { [sessionGuid: string] : any; } = {};
+    private _objects: { [sessionGuid: string]: any; } = {};
 
     constructor(@inject(TYPES.ISettings) settings: ISettings,
-                @inject(TYPES.ISessionService) sessionService: ISessionService,
-                @inject(TYPES.IThreeMaxscriptBridgePool) threeMaxscriptBridgePool: ISessionPool<IThreeMaxscriptBridge>,
+        @inject(TYPES.ISessionService) sessionService: ISessionService,
+        @inject(TYPES.IThreeMaxscriptBridgePool) threeMaxscriptBridgePool: ISessionPool<IThreeMaxscriptBridge>,
     ) {
         this._settings = settings;
         this._sessionService = sessionService;
@@ -52,6 +52,8 @@ class ThreeObjectEndpoint implements IEndpoint {
         express.post(`/v${this._settings.majorVersion}/three`, async function (this: ThreeObjectEndpoint, req, res) {
             let sessionGuid = req.body.session_guid;
             console.log(`POST on ${req.path} with session: ${sessionGuid}`);
+
+            req.connection.setTimeout(15 * 60 * 1000); // 15 min
 
             // check that session is actually open
             let session: Session = await this._sessionService.GetSession(sessionGuid, false, false, true);
