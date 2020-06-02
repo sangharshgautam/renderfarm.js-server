@@ -15,6 +15,6 @@ export class MaxscriptClientFactory implements IFactory<IMaxscriptClient> {
     }
 
     public async Create(session: Session): Promise<IMaxscriptClient> {
-        return new MaxscriptClient(this._settings);
+        return new MaxscriptClient(this._settings, session);
     }
 }

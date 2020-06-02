@@ -59,7 +59,7 @@ export class MeshBinding extends SceneObjectBindingBase {
             console.log(` >> mesh binding, considering material`);
             if (material && material.ThreeJson && material.ThreeJson.name) {
                 if (objectJson.userData && objectJson.userData.materialJson) {
-                    const textureVars = {};
+                    //const textureVars = {};
 
                     //if (material.ThreeJson.map) {
                     //    const textureBinding = this._textureCache.Textures[material.ThreeJson.map];
@@ -74,14 +74,11 @@ export class MeshBinding extends SceneObjectBindingBase {
                     //    }
                     //}
 
-                    let materialName = material.ThreeJson.name;
-                    let materialCopyName = this.getObjectName(objectJson.userData.materialJson);
-                    console.log(` >> material will be cloned and assigned: `, materialName, " as ", materialCopyName);
-                    await this._maxscriptClient.assignMaterial(meshName, materialName, materialCopyName);
-
                     objectJson.userData.materialJson["$"] = material.ThreeJson;
-                    console.log(` >> material will be created from userData: `, materialName);
-                    await material.Patch(objectJson.userData.materialJson, textureVars);
+
+                    let materialName = material.ThreeJson.name;
+                    console.log(` >> material will be cloned and assigned: `, materialName);
+                    await this._maxscriptClient.assignMaterial(meshName, materialName, objectJson.userData.materialJson);
                 } else {
                     let materialName = material.ThreeJson.name;
                     console.log(` >> material will be assigned: `, materialName);

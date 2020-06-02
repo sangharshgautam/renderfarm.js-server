@@ -4,7 +4,7 @@ import { parseMaterialProperty } from "./material_binding.helper";
 export class MaterialBinding implements IMaterialBinding {
     private _maxscriptClient: IMaxscriptClient;
     private _materialJson: any;
-    private _maxMaterialName: string;
+    // private _maxMaterialName: string;
 
     public constructor(
         maxscriptClient: IMaxscriptClient,
@@ -22,7 +22,7 @@ export class MaterialBinding implements IMaterialBinding {
         throw new Error("Method not implemented.");
     }
 
-    public async Post(materialJson: any, textureVars: ITextureVars): Promise<PostResult> {
+    public async Post(materialJson: any): Promise<PostResult> {
         this._materialJson = materialJson;
 
         console.log(" >> MaterialBinding takes json, and sends it to remote maxscript: ", this._materialJson);
@@ -44,35 +44,7 @@ export class MaterialBinding implements IMaterialBinding {
 
         delete this._materialJson["$"];
 
-        await this._maxscriptClient.createMaterial(matName, this._materialJson.type, this._materialJson.params, textureVars);
-
-        return {
-        };
-    }
-
-    public async Patch(materialJson: any, textureVars: ITextureVars): Promise<PostResult> {
-        this._materialJson = materialJson;
-
-        console.log(" >> MaterialBinding takes json, and sends it to remote maxscript: ", this._materialJson);
-
-        let matName = this.getObjectName(this._materialJson);
-        console.log(" >> MaterialBinding find matName: ", matName);
-
-        const keys = Object.keys(this._materialJson.params);
-        for (let key of keys) {
-            const value = this._materialJson.params[key];
-            if (typeof value === "string") {
-                const maxscriptValue = "( " + value.replace(/\\/g, "\\\\") + " )";
-                this._materialJson.params[key] = maxscriptValue;
-            } else {
-                const maxscriptValue = "( " + value + " )";
-                this._materialJson.params[key] = maxscriptValue;
-            }
-        }
-
-        delete this._materialJson["$"];
-
-        await this._maxscriptClient.updateMaterial(matName, this._materialJson.params, textureVars);
+        await this._maxscriptClient.createMaterial(matName, this._materialJson.type, this._materialJson.params);
 
         return {
         };

@@ -103,8 +103,7 @@ export interface IMaxscriptClient {
     createSpotlight(spotlightJson: any): Promise<boolean>;
 
     createBitmapTexture(maxName: string, varName: string, threeJson: any, filepath: string): Promise<boolean>;
-    createMaterial(materialName: string, materialType: string, materialParams: any, textureVars?: ITextureVars): Promise<boolean>;
-    updateMaterial(materialName: string, materialParams: any, textureVars?: ITextureVars): Promise<boolean>;
+    createMaterial(materialName: string, materialType: string, materialParams: any): Promise<boolean>;
 
     downloadJson(url: string, path: string): Promise<boolean>;
 
@@ -115,7 +114,7 @@ export interface IMaxscriptClient {
     uploadFile(url: string, path: string): Promise<boolean>;
     extractZip(fullpath: string, destDir: string): Promise<boolean>;
 
-    assignMaterial(nodeName: string, materialName: string, materialCopyName?: string): Promise<boolean>;
+    assignMaterial(nodeName: string, materialName: string, materialJson?: any): Promise<boolean>;
     assignMultiSubMaterial(nodeName, materialNames): Promise<boolean>;
 
     unwrapUV2(nodeName: string): Promise<boolean>;
@@ -234,7 +233,7 @@ export interface ITextureVars {
 export interface IMaterialBinding {
     readonly ThreeJson: any;
     Get(): Promise<any>;
-    Post(materialJson: any, textureVars: ITextureVars): Promise<any>;
+    Post(materialJson: any): Promise<PostResult>;
     Put(materialJson: any): Promise<any>;
     Delete(): Promise<any>;
 }
