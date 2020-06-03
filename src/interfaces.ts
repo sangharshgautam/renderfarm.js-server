@@ -26,7 +26,7 @@ export interface IDatabase {
     //sessions
     getSession(sessionGuid: string, options?: any): Promise<Session>;
     touchSession(sessionGuid: string): Promise<Session>;
-    createSession(apiKey: ApiKey, workgroup: string, workspace: string, sceneFilename?: string): Promise<Session>;
+    createSession(apiKey: ApiKey, workgroup: string, workspace: string, sceneFilename?: string, debug?: boolean): Promise<Session>;
     expireSessions(olderThanMinutes: number): Promise<Session[]>;
     closeSession(sessionGuid: string): Promise<Session>;
     failSession(sessionGuid: string, failReason?: string | undefined): Promise<Session>;
@@ -81,6 +81,8 @@ export interface IMaxscriptClient {
 
     resetScene(): Promise<boolean>;
     openScene(maxSceneFilename: string, workspace: Workspace): Promise<boolean>;
+    saveScene(maxSceneFilename: string, workspace: Workspace): Promise<boolean>;
+    dumpScene(maxSceneFilename: string): Promise<boolean>;
     xrefScene(maxSceneFilename: string, workspace: Workspace, nodeName: string): Promise<boolean>;
 
     setObjectWorldMatrix(nodeName, matrixWorldArray): Promise<boolean>;
@@ -149,7 +151,7 @@ export interface IJobService {
 
 export interface ISessionService {
     GetSession(sessionGuid: string, allowClosed?: boolean, letTouch?: boolean, resolveRefs?: boolean): Promise<Session>;
-    CreateSession(apiKey: ApiKey, workgroup: string, workspaceGuid: string, sceneFilename?: string): Promise<Session>;
+    CreateSession(apiKey: ApiKey, workgroup: string, workspaceGuid: string, sceneFilename?: string, debug?: boolean): Promise<Session>;
     KeepSessionAlive(sessionGuid: string): Promise<Session>;
     CloseSession(sessionGuid: string): Promise<Session>;
     ExpireSessions(sessionTimeoutMinutes: number): Promise<Session[]>;

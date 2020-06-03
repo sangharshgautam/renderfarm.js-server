@@ -5,6 +5,8 @@ import { IFactory, IMaxscriptClient, ISessionService } from "../../interfaces";
 import { Session } from "../../database/model/session";
 import { SessionPoolBase } from "../../core/session_pool_base";
 
+const uuidv4 = require("uuid/v4");
+
 @injectable()
 export class MaxScriptClientPool extends SessionPoolBase<IMaxscriptClient> {
 
@@ -79,6 +81,12 @@ export class MaxScriptClientPool extends SessionPoolBase<IMaxscriptClient> {
 
     protected async onBeforeItemRemove(closedSession: Session, maxscript: IMaxscriptClient): Promise<any> {
         try {
+            console.log(` >> onBeforeItemRemove: `, closedSession);
+            const dumpSceneAs = `dump_apiKey=${closedSession.apiKey}_sessionGuid=${closedSession.guid}.max`;
+            if (closedSession.debug) {
+                await maxscript.saveScene(dumpSceneAs, closedSession.workspaceRef);
+            }
+            await maxscript.dumpScene(`C:\\\\Temp\\\\${dumpSceneAs}`);
             await maxscript.resetScene();
             maxscript.disconnect();
         } catch (err) {

@@ -13,9 +13,9 @@ class SessionEndpoint implements IEndpoint {
     private _maxscriptClientPool: ISessionPool<IMaxscriptClient>;
 
     constructor(@inject(TYPES.ISettings) settings: ISettings,
-                @inject(TYPES.IDatabase) database: IDatabase,
-                @inject(TYPES.ISessionService) sessionService: ISessionService,
-                @inject(TYPES.IMaxscriptClientPool) maxscriptClientPool: ISessionPool<IMaxscriptClient>,
+        @inject(TYPES.IDatabase) database: IDatabase,
+        @inject(TYPES.ISessionService) sessionService: ISessionService,
+        @inject(TYPES.IMaxscriptClientPool) maxscriptClientPool: ISessionPool<IMaxscriptClient>,
     ) {
 
         this._settings = settings;
@@ -38,8 +38,7 @@ class SessionEndpoint implements IEndpoint {
         }
     }
 
-    async validateWorkspaceGuid(res: any, apiKey: string, workspaceGuid: string)
-    {
+    async validateWorkspaceGuid(res: any, apiKey: string, workspaceGuid: string) {
         console.log(`    validating workspace guid: apiKey: ${apiKey}, workspaceGuid: ${workspaceGuid}`)
         try {
             let workspace = await this._database.getWorkspace(workspaceGuid);
@@ -92,6 +91,7 @@ class SessionEndpoint implements IEndpoint {
             let workspaceGuid = req.body.workspace_guid;
             let sceneFilename = req.body.scene_filename;
             let workgroup = req.body.workgroup;
+            let debug = req.body.debug;
 
             console.log(`POST on ${req.path} with api_key: ${apiKey} with workspace: ${workspaceGuid}`);
 
@@ -123,7 +123,7 @@ class SessionEndpoint implements IEndpoint {
 
             let session: Session;
             try {
-                session = await this._sessionService.CreateSession(apiKeyRef, workgroup, workspaceGuid, sceneFilename);
+                session = await this._sessionService.CreateSession(apiKeyRef, workgroup, workspaceGuid, sceneFilename, debug);
             } catch (err) {
                 console.log(`  FAIL | failed to create session, `, err);
                 res.status(503);
@@ -161,10 +161,11 @@ class SessionEndpoint implements IEndpoint {
             }
 
             res.status(200);
-            res.end(JSON.stringify({ 
-                ok: true, 
-                type: "session", 
-                data: closedSession.toJSON() }, null, 2));
+            res.end(JSON.stringify({
+                ok: true,
+                type: "session",
+                data: closedSession.toJSON()
+            }, null, 2));
 
         }.bind(this));
     }

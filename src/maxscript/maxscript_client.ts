@@ -137,6 +137,24 @@ class MaxscriptClient implements IMaxscriptClient {
         return this.execMaxscript(maxscript, "openScene");
     }
 
+    saveScene(maxSceneFilename: string, workspace: Workspace): Promise<boolean> {
+        let maxscript =
+            `sceneFilename = "${workspace.homeDir}\\\\api-keys\\\\${workspace.apiKey}\\\\workspaces\\\\${workspace.guid}\\\\scenes\\\\${maxSceneFilename}" ; \r\n`
+            + `saveMaxFile sceneFilename quiet: true ; \r\n `;
+
+        console.log(" >> maxscript: \r\n", maxscript);
+        return this.execMaxscript(maxscript, "saveScene");
+    }
+
+    dumpScene(maxSceneFilename: string): Promise<boolean> {
+        let maxscript =
+            `sceneFilename = "${maxSceneFilename}" ; \r\n`
+            + `saveMaxFile sceneFilename quiet: true ; \r\n `;
+
+        console.log(" >> maxscript: \r\n", maxscript);
+        return this.execMaxscript(maxscript, "dumpScene");
+    }
+
     xrefScene(maxSceneFilename: string, workspace: Workspace, nodeName: string): Promise<boolean> {
         // see here: http://docs.autodesk.com/3DSMAX/14/ENU/MAXScript%20Help%202012//index.html?url=files/GUID-3265908F-28AB-441E-9866-071BBEDD9FF-1053.htm,topicNumber=d28e344839
 
@@ -508,7 +526,7 @@ fullpath = (dir + "\\" + filename)
                     maxscript += `res = cmdexRun "${curlPath} -k -s \\\"${downloadUrl}\\\" -o \\\"${downloadedMapPath}\\\" " ; \r\n`;
                     maxscript += `if res then (\r\n  try ( matCopy.${key} = \"${downloadedMapPath}\" ; ) catch ( false ) \r\n) \r\n `;
                 } else {
-                    maxscript += `  try ( matCopy.${key} = ${value} ; ) catch ( false ) \r\n`
+                    maxscript += `  try ( matCopy.${key} = ${value} ; ) catch ( false ) \r\n`;
                 }
             }
 
