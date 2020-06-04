@@ -19,6 +19,10 @@ export interface SettingsData {
     expireSessions: boolean;
     sessionTimeoutMinutes: number;
     workerTimeoutSeconds: number;
+    collectionPrefix: string;
+    dropFolderUsername: string;
+    dropFolderPassword: string;
+    mixpanelToken: string;
 }
 
 @injectable()
@@ -74,7 +78,7 @@ export class Settings implements ISettings {
         return this._majorVersion;
     }
 
-    public get current(): any {
+    public get current(): SettingsData {
         return this._settings;
     }
 }

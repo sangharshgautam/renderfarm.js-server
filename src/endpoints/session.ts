@@ -3,6 +3,7 @@ import * as express from "express";
 import { IEndpoint, ISettings, ISessionService, IDatabase, IMaxscriptClient, ISessionPool } from "../interfaces";
 import { TYPES } from "../types";
 import { Session } from "../database/model/session";
+import { ApiKey } from "../database/model/api_key";
 
 @injectable()
 class SessionEndpoint implements IEndpoint {
@@ -12,9 +13,9 @@ class SessionEndpoint implements IEndpoint {
     private _maxscriptClientPool: ISessionPool<IMaxscriptClient>;
 
     constructor(@inject(TYPES.ISettings) settings: ISettings,
-                @inject(TYPES.IDatabase) database: IDatabase,
-                @inject(TYPES.ISessionService) sessionService: ISessionService,
-                @inject(TYPES.IMaxscriptClientPool) maxscriptClientPool: ISessionPool<IMaxscriptClient>,
+        @inject(TYPES.IDatabase) database: IDatabase,
+        @inject(TYPES.ISessionService) sessionService: ISessionService,
+        @inject(TYPES.IMaxscriptClientPool) maxscriptClientPool: ISessionPool<IMaxscriptClient>,
     ) {
 
         this._settings = settings;
@@ -23,20 +24,22 @@ class SessionEndpoint implements IEndpoint {
         this._maxscriptClientPool = maxscriptClientPool;
     }
 
-    async validateApiKey(res: any, apiKey: string) {
+    async validateApiKey(res: any, apiKey: string): Promise<ApiKey> {
+        console.log(`    validating api key: ${apiKey}`)
         try {
-            await this._database.getApiKey(apiKey);
-            return true;
+            const apiKeyRef = await this._database.getApiKey(apiKey);
+            console.log(`    OK | api key accepted: `, apiKeyRef);
+            return apiKeyRef;
         } catch (err) {
             console.log(`REJECT | api_key rejected`);
             res.status(403);
             res.end(JSON.stringify({ ok: false, message: "api_key rejected", error: err.message }, null, 2));
-            return false;
+            return Promise.resolve(null);
         }
     }
 
-    async validateWorkspaceGuid(res: any, apiKey: string, workspaceGuid: string)
-    {
+    async validateWorkspaceGuid(res: any, apiKey: string, workspaceGuid: string) {
+        console.log(`    validating workspace guid: apiKey: ${apiKey}, workspaceGuid: ${workspaceGuid}`)
         try {
             let workspace = await this._database.getWorkspace(workspaceGuid);
 
@@ -87,6 +90,8 @@ class SessionEndpoint implements IEndpoint {
             let apiKey = req.body.api_key;
             let workspaceGuid = req.body.workspace_guid;
             let sceneFilename = req.body.scene_filename;
+            let workgroup = req.body.workgroup;
+            let debug = req.body.debug;
 
             console.log(`POST on ${req.path} with api_key: ${apiKey} with workspace: ${workspaceGuid}`);
 
@@ -104,16 +109,24 @@ class SessionEndpoint implements IEndpoint {
                 return;
             }
 
-            if (!await this.validateApiKey(res, apiKey)) return;
+            if (!workgroup) {
+                console.log(`REJECT | workgroup is missing`);
+                res.status(400);
+                res.end(JSON.stringify({ ok: false, message: "workgroup is missing", error: null }, null, 2));
+                return;
+            }
+
+            let apiKeyRef = await this.validateApiKey(res, apiKey);
+            if (!apiKeyRef) return;
 
             if (!await this.validateWorkspaceGuid(res, apiKey, workspaceGuid)) return;
 
             let session: Session;
             try {
-                session = await this._sessionService.CreateSession(apiKey, workspaceGuid, sceneFilename);
+                session = await this._sessionService.CreateSession(apiKeyRef, workgroup, workspaceGuid, sceneFilename, debug);
             } catch (err) {
                 console.log(`  FAIL | failed to create session, `, err);
-                res.status(500);
+                res.status(503);
                 res.end(JSON.stringify({ ok: false, message: "failed to create session", error: err.message }, null, 2));
                 return;
             }
@@ -128,7 +141,7 @@ class SessionEndpoint implements IEndpoint {
             }
 
             res.status(201);
-            res.end(JSON.stringify({ ok: true, type: "session", data: { guid: session.guid } }, null, 2));
+            res.end(JSON.stringify({ ok: true, type: "session", data: session }, null, 2));
 
         }.bind(this));
 
@@ -148,10 +161,11 @@ class SessionEndpoint implements IEndpoint {
             }
 
             res.status(200);
-            res.end(JSON.stringify({ 
-                ok: true, 
-                type: "session", 
-                data: closedSession.toJSON() }, null, 2));
+            res.end(JSON.stringify({
+                ok: true,
+                type: "session",
+                data: closedSession.toJSON()
+            }, null, 2));
 
         }.bind(this));
     }

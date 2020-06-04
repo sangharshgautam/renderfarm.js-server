@@ -7,7 +7,7 @@ function pad(num, size) {
 var rfarm = {
     apiKey: "75f5-4d53-b0f4",
     workspace: "55a0bd33-9f15-4bc0-a482-17899eb67af3",
-    baseUrl: "https://acc.renderfarmjs.com",
+    baseUrl: "https://alengo3d.renderfarmjs.com:8000",
     // baseUrl: "https://localhost:8000",
 
     geometries: {},  // here we map scene geometry uuid <==> backend geometry resource
@@ -34,7 +34,7 @@ rfarm.createSession = function(onCreated, onError) {
         data: { 
             api_key: this.apiKey, 
             workspace_guid: this.workspace,
-            scene_filename: "vray_empty_with_lights.max"
+            scene_filename: "test1_cubes.max"
         },
         type: 'POST',
         success: function(result) {
@@ -230,7 +230,7 @@ rfarm.createJob = function(sessionGuid, cameraName, bakeMeshUuid, width, height,
         data: { 
             session_guid: sessionGuid,
             camera_name: cameraName,
-            bake_mesh_uuid: bakeMeshUuid,
+            // bake_mesh_uuid: bakeMeshUuid,
             render_width: width,
             render_height: height,
             render_settings: renderSettings,

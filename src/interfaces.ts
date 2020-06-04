@@ -26,7 +26,7 @@ export interface IDatabase {
     //sessions
     getSession(sessionGuid: string, options?: any): Promise<Session>;
     touchSession(sessionGuid: string): Promise<Session>;
-    createSession(apiKey: string, workspace: string, sceneFilename?: string): Promise<Session>;
+    createSession(apiKey: ApiKey, workgroup: string, workspace: string, sceneFilename?: string, debug?: boolean): Promise<Session>;
     expireSessions(olderThanMinutes: number): Promise<Session[]>;
     closeSession(sessionGuid: string): Promise<Session>;
     failSession(sessionGuid: string, failReason?: string | undefined): Promise<Session>;
@@ -39,15 +39,15 @@ export interface IDatabase {
     insertWorker(worker: Worker): Promise<Worker>;
     upsertWorker(worker: Worker): Promise<boolean>;
     updateWorker(worker: Worker, setter: any): Promise<Worker>;
-    getRecentWorkers(): Promise<Worker[]>;
-    getAvailableWorkers(): Promise<Worker[]>;
+    getRecentWorkers(workgroup: string): Promise<Worker[]>;
+    getAvailableWorkers(workgroup?: string): Promise<Worker[]>;
 
     //storeVraySpawner(vraySpawnerInfo: VraySpawnerInfo): Promise<VraySpawnerInfo>;
 
     //jobs
     getJob(jobGuid: string): Promise<Job>;
     getActiveJobs(workgroup: string): Promise<Job[]>;
-    createJob(apiKey: string, workerGuid: string, cameraName: string, bakeMeshUuid: string, renderWidth: number, renderHeight: number, renderSettings: any): Promise<Job>;
+    createJob(apiKey: ApiKey, workerGuid: string, cameraJson: any, bakeMeshUuid: string, renderWidth: number, renderHeight: number, alpha: boolean, renderSettings: any): Promise<Job>;
     updateJob(job: Job, setter: any): Promise<Job>;
     completeJob(job: Job, urls: string[]): Promise<Job>;
     cancelJob(job: Job): Promise<Job>;
@@ -69,6 +69,10 @@ export interface IEndpoint {
     bind(express: express.Application);
 }
 
+export interface IMixpanel {
+    trackRequest(req: any, res: any): void;
+}
+
 export interface IMaxscriptClient {
     connect(ip: string, port: number): Promise<boolean>;
     disconnect(): void;
@@ -76,7 +80,10 @@ export interface IMaxscriptClient {
     execMaxscript(maxscript: string, actionDesc: string): Promise<boolean>;
 
     resetScene(): Promise<boolean>;
-    openScene(maxSceneFilename: string, workspace: Workspace);
+    openScene(maxSceneFilename: string, workspace: Workspace): Promise<boolean>;
+    saveScene(maxSceneFilename: string, workspace: Workspace): Promise<boolean>;
+    dumpScene(maxSceneFilename: string): Promise<boolean>;
+    xrefScene(maxSceneFilename: string, workspace: Workspace, nodeName: string): Promise<boolean>;
 
     setObjectWorldMatrix(nodeName, matrixWorldArray): Promise<boolean>;
     setObjectMatrix(nodeName, matrixArray): Promise<boolean>;
@@ -87,6 +94,8 @@ export interface IMaxscriptClient {
     setWorkspace(workspaceInfo: any): Promise<boolean>;
 
     createSceneRoot(maxName: string): Promise<boolean>;
+    createDummy(maxName: string): Promise<boolean>;
+    createObject(maxName: string, objectName: string, objectJson: any): Promise<boolean>;
 
     createTargetCamera(cameraName, cameraJson): Promise<boolean>;
     updateTargetCamera(cameraName, cameraJson: any): Promise<boolean>;
@@ -95,21 +104,25 @@ export interface IMaxscriptClient {
     cloneInstance(nodeName: string, cloneName: string): Promise<boolean>;
 
     createSpotlight(spotlightJson: any): Promise<boolean>;
-    createMaterial(materialJson: any): Promise<boolean>;
+
+    createBitmapTexture(maxName: string, varName: string, threeJson: any, filepath: string): Promise<boolean>;
+    createMaterial(materialName: string, materialType: string, materialParams: any): Promise<boolean>;
 
     downloadJson(url: string, path: string): Promise<boolean>;
 
     importMesh(path: string, nodeName: string): Promise<boolean>;
     exportMesh(path: string, nodeName: string, uuid: string): Promise<boolean>;
 
-    downloadFile(url: string, path: string): Promise<boolean>;
+    downloadFile(url: string, path: string, mimeType: string): Promise<boolean>;
     uploadFile(url: string, path: string): Promise<boolean>;
+    extractZip(fullpath: string, destDir: string): Promise<boolean>;
 
-    assignMaterial(nodeName: string, materialName: string): Promise<boolean>;
+    assignMaterial(nodeName: string, materialName: string, materialJson?: any): Promise<boolean>;
+    assignMultiSubMaterial(nodeName, materialNames): Promise<boolean>;
 
     unwrapUV2(nodeName: string): Promise<boolean>;
 
-    renderScene(camera: string, size: number[], filename: string, renderSettings: any): Promise<boolean>;
+    renderScene(cameraJson: any, size: number[], filename: string, alpha: boolean, renderSettings: any): Promise<boolean>;
     bakeTextures(bakeObjectName: string, size: number, filenames: IBakeTexturesFilenames, renderSettings: any): Promise<boolean>;
 }
 
@@ -139,7 +152,7 @@ export interface IJobService {
 
 export interface ISessionService {
     GetSession(sessionGuid: string, allowClosed?: boolean, letTouch?: boolean, resolveRefs?: boolean): Promise<Session>;
-    CreateSession(apiKey: string, workspaceGuid: string, sceneFilename?: string): Promise<Session>;
+    CreateSession(apiKey: ApiKey, workgroup: string, workspaceGuid: string, sceneFilename?: string, debug?: boolean): Promise<Session>;
     KeepSessionAlive(sessionGuid: string): Promise<Session>;
     CloseSession(sessionGuid: string): Promise<Session>;
     ExpireSessions(sessionTimeoutMinutes: number): Promise<Session[]>;
@@ -176,6 +189,7 @@ export interface ISceneObjectBinding {
 
 export interface PostResult {
     url?: string; // is set when posted geometry was unwrapped
+    path?: string; // where file is uploaded
 }
 
 export interface ISceneObjectBindingFactory extends IFactory<ISceneObjectBinding> {
@@ -208,10 +222,21 @@ export interface IGeometryCacheFactory {
     Create(maxscriptClient: IMaxscriptClient): IGeometryCache;
 }
 
+export interface ITextureVars {
+    map: string;
+    alphaMap: string;
+    bumpMap: string;
+    displacementMap: string;
+    emissiveMap: string;
+    metalnessMap: string;
+    normalMap: string;
+    roughnessMap: string;
+}
+
 export interface IMaterialBinding {
     readonly ThreeJson: any;
     Get(): Promise<any>;
-    Post(materialJson: any): Promise<any>;
+    Post(materialJson: any): Promise<PostResult>;
     Put(materialJson: any): Promise<any>;
     Delete(): Promise<any>;
 }
@@ -224,5 +249,41 @@ export interface IMaterialCache {
 
 export interface IMaterialCacheFactory {
     Create(maxscriptClient: IMaxscriptClient): IMaterialCache;
+}
+
+export interface ITextureBinding {
+    readonly ThreeJson: any;
+    Get(): Promise<any>;
+    Post(filepath: string, varName: string): Promise<any>;
+    Put(textureJson: any, filepath: string, varName: string): Promise<any>;
+    Delete(): Promise<any>;
+}
+
+export interface ITextureCache {
+    readonly Textures: {
+        [uuid: string]: ITextureBinding;
+    }
+}
+
+export interface ITextureCacheFactory {
+    Create(maxscriptClient: IMaxscriptClient): ITextureCache;
+}
+
+export interface IImageBinding {
+    readonly ThreeJson: any;
+    Get(): Promise<any>;
+    Post(): Promise<any>;
+    Put(imageJson: any): Promise<any>;
+    Delete(): Promise<any>;
+}
+
+export interface IImageCache {
+    readonly Images: {
+        [uuid: string]: IImageBinding;
+    }
+}
+
+export interface IImageCacheFactory {
+    Create(maxscriptClient: IMaxscriptClient): IImageCache;
 }
 

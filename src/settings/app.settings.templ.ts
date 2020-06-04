@@ -16,7 +16,8 @@ module.exports = function() { return {
         workspaceCheck: true,
         expireSessions: true,
         sessionTimeoutMinutes: 3,
-        workerTimeoutSeconds: 3
+        workerTimeoutSeconds: 3,
+        mixpanelToken: "123"
     },
     test: {
         connectionUrl: "mongodb://rfarmmgr:123456@192.168.0.151:27017/rfarmdb",

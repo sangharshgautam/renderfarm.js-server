@@ -23,8 +23,7 @@ export class Database implements IDatabase {
     private _settings: ISettings;
     private _client: MongoClient;
 
-    constructor(@inject(TYPES.ISettings) settings: ISettings) 
-    {
+    constructor(@inject(TYPES.ISettings) settings: ISettings) {
         this._settings = settings;
     }
 
@@ -48,7 +47,7 @@ export class Database implements IDatabase {
             } else {
                 return false;
             }
-        } catch(err) {
+        } catch (err) {
             throw Error(`failed to disconnect from database, ${err.message}`);
         }
     }
@@ -60,7 +59,7 @@ export class Database implements IDatabase {
 
         let collections = await db.listCollections().toArray();
 
-        let users = this.envCollectionName("users"); 
+        let users = this.envCollectionName("users");
         if (!collections.find(e => e.name === users)) {
             await db.createCollection(users);
         }
@@ -103,7 +102,7 @@ export class Database implements IDatabase {
 
         let collections = await db.listCollections().toArray();
 
-        let users = this.envCollectionName("users"); 
+        let users = this.envCollectionName("users");
         if (collections.find(e => e.name === users)) {
             await db.collection(users).drop();
         }
@@ -151,7 +150,7 @@ export class Database implements IDatabase {
             let name = collections[k].name;
             if (regex.test(name)) {
                 await db.collection(name).drop();
-                ++ count;
+                ++count;
             }
         }
 
@@ -161,8 +160,8 @@ export class Database implements IDatabase {
 
     //#region Api Keys
     public async getApiKey(apiKey: string): Promise<ApiKey> {
-        return await this.findOneAndUpdate<ApiKey>(
-            "api-keys", 
+        return this.findOneAndUpdate<ApiKey>(
+            "api-keys",
             { apiKey: apiKey },
             { $set: { lastSeen: new Date() } },
             (obj) => new ApiKey(obj));
@@ -183,18 +182,19 @@ export class Database implements IDatabase {
         let session: Session;
         if (options && options.readOnly) {
             session = await this.getOne<Session>(
-                "sessions", 
+                "sessions",
                 filter,
                 (obj) => new Session(obj));
         } else {
             session = await this.findOneAndUpdate<Session>(
-                "sessions", 
+                "sessions",
                 filter,
                 setter,
                 (obj) => new Session(obj));
         }
 
         if (options.resolveRefs) {
+            session.apiKeyRef = await this.getApiKey(session.apiKey);
             session.workerRef = await this.getSessionWorker(session);
 
             if (session.workerRef) {
@@ -205,6 +205,32 @@ export class Database implements IDatabase {
         }
 
         return session;
+    }
+
+    public async getOpenSessions(apiKey: ApiKey): Promise<Session[]> {
+        // TODO: this code is not tested
+
+        let filter: any = {
+            apiKey: apiKey.apiKey,
+            closed: { $ne: true }
+        };
+
+        let sessions = await this.find<Session>(
+            "sessions",
+            filter,
+            (obj) => new Session(obj));
+
+        for (let session of sessions) {
+            session.workerRef = await this.getSessionWorker(session);
+
+            if (session.workerRef) {
+                session.workerRef.jobRef = await this.getSessionJob(session);
+            }
+
+            session.workspaceRef = await this.getWorkspace(session.workspaceGuid);
+        }
+
+        return sessions;
     }
 
     public touchSession(sessionGuid: string): Promise<Session> {
@@ -219,10 +245,10 @@ export class Database implements IDatabase {
 
     private async getSessionWorker(session: Session): Promise<Worker> {
         return this.safe<Worker>(this.getOne<Worker>(
-            "workers", 
-            { 
-                guid: session.workerGuid 
-            }, 
+            "workers",
+            {
+                guid: session.workerGuid
+            },
             obj => new Worker(obj)
         ));
     }
@@ -237,51 +263,72 @@ export class Database implements IDatabase {
         ));
     }
 
-    public async createSession(apiKey: string, workspaceGuid: string, sceneFilename: string): Promise<Session> {
+    public async createSession(apiKey: ApiKey, workgroup: string, workspaceGuid: string, sceneFilename: string, debug?: boolean): Promise<Session> {
         await this.ensureClientConnection();
 
         let db = this._client.db(this._settings.current.databaseName);
         assert.notEqual(db, null);
 
+        if (!apiKey.workgroups[workgroup]) {
+            throw new Error("workgroup access denied");
+        }
+
+        let limitSessions = apiKey.workgroups[workgroup].limitSessions;
+        if (limitSessions !== 9999) {
+            console.log(` >> checking open session limit according to apiKey.workgroups[${workgroup}]: `, apiKey.workgroups[workgroup]);
+
+            let openSessions = await this.getOpenSessions(apiKey);
+            let openSessionsCount = openSessions.filter(s => s.workerRef.workgroup === workgroup).length;
+            console.log(` >> openSessionsCount: `, openSessionsCount, `, limitSessions: `, limitSessions);
+
+            if (openSessionsCount >= limitSessions) {
+                throw new Error("reached limit of open sessions");
+            }
+        }
+
         let workspace = await this.getWorkspace(workspaceGuid);
 
         // pick only the workers who were seen not less than 2 seconds ago
-        let workers = await this.getAvailableWorkers();
+        let workers = await this.getAvailableWorkers(workgroup);
 
         // this will prevent multiple worker assignment, if top most worker was set busy = true,
         // then we just pick underlying least loaded worker.
-        for(let wi in workers) {
+        for (let wi in workers) {
             let candidate = workers[wi];
-            let createdSession = await this.tryCreateSessionAtWorker(apiKey, workspace, sceneFilename, candidate);
+            let createdSession = await this.tryCreateSessionAtWorker(apiKey, workspace, sceneFilename, candidate, debug);
             if (createdSession) {
                 return createdSession;
             }
         }
 
-        throw Error("all workers busy");
+        throw new Error("all workers busy");
     }
 
-    private async tryCreateSessionAtWorker(apiKey: string, workspace: Workspace, sceneFilename: string, candidate: Worker): Promise<Session> {
+    private async tryCreateSessionAtWorker(apiKey: ApiKey, workspace: Workspace, sceneFilename: string, candidate: Worker, debug?: boolean): Promise<Session> {
         try {
             let filter: any = {
                 guid: candidate.guid,
                 sessionGuid: { $exists: false }
             };
             let sessionGuid = uuidv4();
-            let setter: any = { $set: { 
-                sessionGuid: sessionGuid
-            }};
+            let setter: any = {
+                $set: {
+                    sessionGuid: sessionGuid
+                }
+            };
 
             let caputuredWorker = await this.findOneAndUpdate<Worker>("workers", filter, setter, (obj: any) => new Worker(obj));
 
             let session = new Session(null);
-            session.apiKey = apiKey;
+            session.apiKey = apiKey.apiKey;
             session.guid = sessionGuid;
+            session.ttl = this._settings.current.sessionTimeoutMinutes * 60;
             session.firstSeen = new Date();
             session.lastSeen = session.firstSeen;
             session.workerGuid = caputuredWorker.guid;
             session.workspaceGuid = workspace.guid;
             session.sceneFilename = sceneFilename;
+            session.debug = debug;
 
             let result = await this.insertOne<Session>("sessions", session, obj => new Session(obj));
             result.workerRef = caputuredWorker;
@@ -294,7 +341,8 @@ export class Database implements IDatabase {
 
     public async closeSession(sessionGuid: string): Promise<Session> {
         let closedAt = new Date();
-        let closedSession = await this.safe<Session>(this.findOneAndUpdate<Session>(
+        let closedSession = await this.safe<Session>(
+            this.findOneAndUpdate<Session>(
                 "sessions",
                 {
                     guid: sessionGuid,
@@ -302,7 +350,7 @@ export class Database implements IDatabase {
                 },
                 {
                     $set: {
-                        closed: true, 
+                        closed: true,
                         closedAt: closedAt,
                         lastSeen: closedAt
                     }
@@ -314,7 +362,7 @@ export class Database implements IDatabase {
         }
 
         closedSession.workerRef = await this.findOneAndUpdate<Worker>(
-            "workers", 
+            "workers",
             {
                 guid: closedSession.workerGuid
             },
@@ -322,8 +370,15 @@ export class Database implements IDatabase {
                 $unset: {
                     sessionGuid: null
                 }
-            }, 
+            },
             obj => new Worker(obj));
+
+        closedSession.workspaceRef = await this.getOne<Workspace>(
+            "workspaces",
+            {
+                guid: closedSession.workspaceGuid
+            },
+            (obj) => new Workspace(obj));
 
         return closedSession;
     }
@@ -331,28 +386,28 @@ export class Database implements IDatabase {
     public async failSession(sessionGuid: string, failReason?: string | undefined): Promise<Session> {
         let closedAt = new Date();
         let closedSession = await this.safe<Session>(this.findOneAndUpdate<Session>(
-                "sessions",
-                {
-                    guid: sessionGuid,
-                    closedAt: { $exists: false }
-                },
-                {
-                    $set: {
-                        closed: true,
-                        closedAt: closedAt,
-                        lastSeen: closedAt,
-                        failed: true,
-                        failReason: failReason
-                    }
-                },
-                obj => new Session(obj)));
+            "sessions",
+            {
+                guid: sessionGuid,
+                closedAt: { $exists: false }
+            },
+            {
+                $set: {
+                    closed: true,
+                    closedAt: closedAt,
+                    lastSeen: closedAt,
+                    failed: true,
+                    failReason: failReason
+                }
+            },
+            obj => new Session(obj)));
 
         if (!closedSession) {
             throw Error("session not found");
         }
 
         closedSession.workerRef = await this.findOneAndUpdate<Worker>(
-            "workers", 
+            "workers",
             {
                 guid: closedSession.workerGuid
             },
@@ -360,16 +415,16 @@ export class Database implements IDatabase {
                 $unset: {
                     sessionGuid: null
                 }
-            }, 
+            },
             obj => new Worker(obj));
 
         return closedSession;
     }
 
     public async expireSessions(olderThanMinutes: number): Promise<Session[]> {
-        let expirationDate = new Date(Date.now() - olderThanMinutes * 60*1000);
-        let filter = { 
-            lastSeen : { $lte: expirationDate },
+        let expirationDate = new Date(Date.now() - olderThanMinutes * 60 * 1000);
+        let filter = {
+            lastSeen: { $lte: expirationDate },
             closed: { $exists: false }
         };
         let setter = { $set: { closed: true, closedAt: new Date(), expired: true } };
@@ -381,16 +436,16 @@ export class Database implements IDatabase {
         let workerUpdateFilter = { $or: [] };
         for (let si in expiredSessions) {
             let session = expiredSessions[si];
-            workerUpdateFilter.$or.push({guid: session.workerGuid});
+            workerUpdateFilter.$or.push({ guid: session.workerGuid });
         }
 
         let updatedWorkers = await this.findManyAndUpdate(
-            "workers", 
-            workerUpdateFilter, 
-            { 
-                $unset: { 
-                    sessionGuid: null 
-                } 
+            "workers",
+            workerUpdateFilter,
+            {
+                $unset: {
+                    sessionGuid: null
+                }
             },
             obj => new Worker(obj));
 
@@ -406,8 +461,8 @@ export class Database implements IDatabase {
     //#region Workspaces
     public async getWorkspace(workspaceGuid: string): Promise<Workspace> {
         return await this.findOneAndUpdate<Workspace>(
-            "workspaces", 
-            { guid: workspaceGuid, workgroup: this._settings.current.workgroup },
+            "workspaces",
+            { guid: workspaceGuid },
             { $set: { lastSeen: new Date() } },
             (obj) => new Workspace(obj));
     }
@@ -416,13 +471,13 @@ export class Database implements IDatabase {
     //#region Workers
     public async getWorker(workerGuid: string): Promise<Worker> {
         let worker = await this.getOne<Worker>(
-                "workers", 
-                { guid: workerGuid },
-                (obj) => new Worker(obj));
+            "workers",
+            { guid: workerGuid },
+            (obj) => new Worker(obj));
 
         worker.jobRef = await this.safe<Job>(this.getOne<Job>(
             "jobs",
-            { 
+            {
                 workerGuid: workerGuid,
                 closed: { $exists: false }
             },
@@ -440,14 +495,14 @@ export class Database implements IDatabase {
         return worker;
     }
 
-    public async getRecentWorkers(): Promise<Worker[]> {
+    public async getRecentWorkers(workgroup: string): Promise<Worker[]> {
         await this.ensureClientConnection();
 
         let db = this._client.db(this._settings.current.databaseName);
         assert.notEqual(db, null);
 
-        let filter = { 
-            workgroup: this._settings.current.workgroup
+        let filter = {
+            workgroup: workgroup
         };
 
         let result = await db.collection(this.envCollectionName("workers"))
@@ -459,18 +514,23 @@ export class Database implements IDatabase {
         return result.map(e => new Worker(e));
     }
 
-    public async getAvailableWorkers(): Promise<Worker[]> {
+    public async getAvailableWorkers(workgroup?: string): Promise<Worker[]> {
         await this.ensureClientConnection();
 
         let db = this._client.db(this._settings.current.databaseName);
         assert.notEqual(db, null);
 
         let recentOnlineDate = new Date(Date.now() - 2 * 1000);
-        let result = await db.collection(this.envCollectionName("workers")).find({ 
-             workgroup: this._settings.current.workgroup,
-                lastSeen : { $gte: recentOnlineDate },
-                sessionGuid: { $exists: false }
-            }).sort({
+        let filter: any = {
+            lastSeen: { $gte: recentOnlineDate },
+            sessionGuid: { $exists: false }
+        };
+        if (workgroup) {
+            filter.workgroup = workgroup;
+        }
+        let result = await db.collection(this.envCollectionName("workers"))
+            .find(filter)
+            .sort({
                 cpuUsage: 1 //sort by cpu load, less loaded first
             }).toArray();
 
@@ -492,32 +552,32 @@ export class Database implements IDatabase {
 
     //#region Vray spawners
     //public async storeVraySpawner(vraySpawnerInfo: VraySpawnerInfo): Promise<VraySpawnerInfo> {
-        // let db = this._client.db(this._settings.current.databaseName);
-        // assert.notEqual(db, null);
+    // let db = this._client.db(this._settings.current.databaseName);
+    // assert.notEqual(db, null);
 
-        // let result = await db.collection(this.envCollectionName("vray-spawners")).findOneAndUpdate(
-        //     { mac: vraySpawnerInfo.mac, ip: vraySpawnerInfo.ip },
-        //     { $set: vraySpawnerInfo.toDatabase() },
-        //     { returnOriginal: false, upsert: true });
+    // let result = await db.collection(this.envCollectionName("vray-spawners")).findOneAndUpdate(
+    //     { mac: vraySpawnerInfo.mac, ip: vraySpawnerInfo.ip },
+    //     { $set: vraySpawnerInfo.toDatabase() },
+    //     { returnOriginal: false, upsert: true });
 
-        // if (result.value) {
-        //     resolve(VraySpawnerInfo.fromJSON(obj.value));
-        // } else {
-        //     reject(`unable to find vray spawner with mac ${vraySpawnerInfo.mac} and ip ${vraySpawnerInfo.ip}`);
-        // }
+    // if (result.value) {
+    //     resolve(VraySpawnerInfo.fromJSON(obj.value));
+    // } else {
+    //     reject(`unable to find vray spawner with mac ${vraySpawnerInfo.mac} and ip ${vraySpawnerInfo.ip}`);
+    // }
     //}
     //#endregion
 
     //#region Jobs
     public async getJob(jobGuid: string): Promise<Job> {
         let job = await this.getOne<Job>(
-            "jobs", 
+            "jobs",
             { guid: jobGuid },
             (obj) => new Job(obj));
 
         job.workerRef = await this.getOne<Worker>(
             "workers",
-            { 
+            {
                 guid: job.workerGuid
             },
             (obj) => new Worker(obj)
@@ -535,24 +595,25 @@ export class Database implements IDatabase {
                 closed: { $exists: false }
             },
             (obj) => new Job(obj));
-        
+
         return jobs;
     }
 
-    public async createJob(apiKey: string, workerGuid: string, cameraName: string, bakeMeshUuid: string, renderWidth: number, renderHeight: number, renderSettings: any): Promise<Job> {
+    public async createJob(apiKey: ApiKey, workerGuid: string, cameraJson: any, bakeMeshUuid: string, renderWidth: number, renderHeight: number, alpha: boolean, renderSettings: any): Promise<Job> {
         let job = new Job(null);
 
-        job.apiKey = apiKey;
+        job.apiKey = apiKey.apiKey;
         job.guid = uuidv4();
         job.createdAt = new Date();
         job.updatedAt = new Date();
         job.workerGuid = workerGuid;
         job.state = "pending";
 
-        job.cameraName = cameraName;
+        job.cameraJson = cameraJson;
         job.bakeMeshUuid = bakeMeshUuid;
         job.renderWidth = renderWidth;
         job.renderHeight = renderHeight;
+        job.alpha = alpha;
         job.renderSettings = renderSettings;
 
         let result = await this.insertOne<Job>("jobs", job, obj => new Job(obj));
@@ -567,11 +628,11 @@ export class Database implements IDatabase {
 
     public async completeJob(job: Job, urls: string[]): Promise<Job> {
         return this.findOneAndUpdate<Job>(
-            "jobs", 
+            "jobs",
             {
                 guid: job.guid,
                 closed: { $exists: false }
-            }, 
+            },
             {
                 $set: {
                     closedAt: new Date(),
@@ -583,13 +644,13 @@ export class Database implements IDatabase {
                     canceled: null,
                     state: null
                 }
-            }, 
+            },
             obj => new Job(obj));
     }
 
     public async cancelJob(job: Job): Promise<Job> {
         return this.findOneAndUpdate<Job>(
-            "jobs", 
+            "jobs",
             {
                 guid: job.guid,
                 closed: { $exists: false }
@@ -605,13 +666,13 @@ export class Database implements IDatabase {
                     failed: null,
                     state: null
                 }
-            }, 
+            },
             obj => new Job(obj));
     }
 
     public async failJob(job: Job, error: string): Promise<Job> {
         return this.findOneAndUpdate<Job>(
-            "jobs", 
+            "jobs",
             {
                 guid: job.guid,
                 closed: { $exists: false }
@@ -628,7 +689,7 @@ export class Database implements IDatabase {
                     state: null,
                     canceled: null
                 }
-            }, 
+            },
             obj => new Job(obj));
     }
     //#endregion
@@ -656,11 +717,11 @@ export class Database implements IDatabase {
 
         let arr = await db.collection(this.envCollectionName(collection)).find(filter).toArray();
 
-        return arr.map(e => ctor(e)) 
+        return arr.map(e => ctor(e))
     }
 
     public findOneAndUpdate<T extends IDbEntity>(collection: string, filter: any, setter: any, ctor: (obj: any) => T): Promise<T> {
-        return new Promise<T>(async function(this: Database, resolve, reject){
+        return new Promise<T>(async function (this: Database, resolve, reject) {
             try {
                 await this.ensureClientConnection();
             } catch (err) {
@@ -670,13 +731,13 @@ export class Database implements IDatabase {
 
             let db = this._client.db(this._settings.current.databaseName);
             assert.notEqual(db, null);
-    
+
             let opt: FindOneAndUpdateOption = { w: "majority", j: true, returnOriginal: false, upsert: false };
 
             let callback: MongoCallback<FindAndModifyWriteOpResultObject> = function (error: MongoError, res: FindAndModifyWriteOpResultObject) {
                 if (res && res.ok === 1 && res.value) {
                     resolve(ctor ? ctor(res.value) : undefined);
-                } else if (error) { 
+                } else if (error) {
                     reject(Error(error.message));
                 } else {
                     reject(Error(`nothing was updated in ${collection} by ${JSON.stringify(filter)}`));
@@ -684,18 +745,18 @@ export class Database implements IDatabase {
             }.bind(this);
 
             this.unsetNulls(setter);
-    
+
             db.collection(this.envCollectionName(collection)).findOneAndUpdate(
                 filter,
                 setter,
                 opt,
                 callback);
-    
+
         }.bind(this));
     }
 
     public insertOne<T extends IDbEntity>(collection: string, entity: IDbEntity, ctor: (obj: any) => T): Promise<T> {
-        return new Promise<T>(async function(this: Database, resolve, reject) {
+        return new Promise<T>(async function (this: Database, resolve, reject) {
             try {
                 await this.ensureClientConnection();
             } catch (err) {
@@ -719,7 +780,7 @@ export class Database implements IDatabase {
             }.bind(this);
 
             db.collection(this.envCollectionName(collection)).insertOne(
-                entity.toJSON(), 
+                entity.toJSON(),
                 opt,
                 callback);
 
@@ -727,7 +788,7 @@ export class Database implements IDatabase {
     }
 
     public upsertOne(collection: string, entity: IDbEntity): Promise<boolean> {
-        return new Promise<boolean>(async function(this: Database, resolve, reject) {
+        return new Promise<boolean>(async function (this: Database, resolve, reject) {
             try {
                 await this.ensureClientConnection();
             } catch (err) {
@@ -753,14 +814,14 @@ export class Database implements IDatabase {
             db.collection(this.envCollectionName(collection)).updateOne(
                 entity.filter,
                 { $set: entity.toJSON() },
-                opt, 
+                opt,
                 callback);
 
         }.bind(this));
     }
 
     public updateOne(collection: string, filter: any, setter: any): Promise<boolean> {
-        return new Promise<boolean>(async function(this: Database, resolve, reject){
+        return new Promise<boolean>(async function (this: Database, resolve, reject) {
             try {
                 await this.ensureClientConnection();
             } catch (err) {
@@ -770,9 +831,9 @@ export class Database implements IDatabase {
 
             let db = this._client.db(this._settings.current.databaseName);
             assert.notEqual(db, null);
-    
+
             let opt: UpdateOneOptions = { upsert: false, w: "majority", j: true };
-            let callback: MongoCallback<UpdateWriteOpResult> = function(error: MongoError, res: UpdateWriteOpResult) {
+            let callback: MongoCallback<UpdateWriteOpResult> = function (error: MongoError, res: UpdateWriteOpResult) {
                 if (res && res.result && res.result.ok === 1 && res.result.n > 0) {
                     resolve(true);
                 } else if (error) {
@@ -784,18 +845,18 @@ export class Database implements IDatabase {
             }.bind(this);
 
             this.unsetNulls(setter);
-    
+
             db.collection(this.envCollectionName(collection)).updateOne(
                 filter,
                 setter,
-                opt, 
+                opt,
                 callback);
-    
+
         }.bind(this));
     }
 
     public async updateMany(collection: string, filter: any, setter: any): Promise<number> {
-        return new Promise<number>(async function(this: Database, resolve, reject){
+        return new Promise<number>(async function (this: Database, resolve, reject) {
             try {
                 await this.ensureClientConnection();
             } catch (err) {
@@ -805,7 +866,7 @@ export class Database implements IDatabase {
 
             let db = this._client.db(this._settings.current.databaseName);
             assert.notEqual(db, null);
-    
+
             let trans = uuidv4();
             if (!setter.$set) setter.$set = {};
             setter.$set._trans = trans; //remember transaction
@@ -813,7 +874,7 @@ export class Database implements IDatabase {
             this.unsetNulls(setter);
 
             let ops: UpdateManyOptions = { w: "majority", j: true, upsert: false };
-            let callback: MongoCallback<UpdateWriteOpResult> = function(error:MongoError, res:UpdateWriteOpResult) {
+            let callback: MongoCallback<UpdateWriteOpResult> = function (error: MongoError, res: UpdateWriteOpResult) {
                 if (res && res.modifiedCount > 0) {
                     resolve(res.modifiedCount);
                 } else if (error) {
@@ -823,18 +884,18 @@ export class Database implements IDatabase {
                     reject(Error(`failed to modify multiple entities in ${collection} by ${JSON.stringify(filter)}`));
                 }
             }.bind(this);
-    
+
             db.collection(this.envCollectionName(collection)).updateMany(
-                filter, 
-                setter, 
-                ops, 
+                filter,
+                setter,
+                ops,
                 callback);
-    
+
         }.bind(this));
     }
 
     public async findManyAndUpdate<T extends IDbEntity>(collection: string, filter: any, setter: any, ctor: (obj: any) => T): Promise<T[]> {
-        return new Promise<T[]>(async function(this: Database, resolve, reject){
+        return new Promise<T[]>(async function (this: Database, resolve, reject) {
             try {
                 await this.ensureClientConnection();
             } catch (err) {
@@ -850,15 +911,15 @@ export class Database implements IDatabase {
             setter.$set._trans = trans; //remember transaction
 
             this.unsetNulls(setter);
-    
+
             let ops: UpdateManyOptions = { w: "majority", j: true, upsert: false };
-            let callback: MongoCallback<UpdateWriteOpResult> = async function(this: Database, error:MongoError, res:UpdateWriteOpResult) {
+            let callback: MongoCallback<UpdateWriteOpResult> = async function (this: Database, error: MongoError, res: UpdateWriteOpResult) {
                 if (res && res.matchedCount === 0) {
                     resolve([]);
                 } else if (res && res.matchedCount > 0 && res.modifiedCount > 0) {
                     // query updated documents with given transaction
                     let findResult = await db.collection(this.envCollectionName(collection)).find({ _trans: trans }).toArray();
-                    resolve( findResult.map(e => ctor ? ctor(e) : undefined));
+                    resolve(findResult.map(e => ctor ? ctor(e) : undefined));
                 } else if (error) {
                     console.error(error);
                     reject(Error(error.message));
@@ -866,18 +927,18 @@ export class Database implements IDatabase {
                     reject(Error(`failed to modify multiple entities in ${collection} by ${JSON.stringify(filter)}`));
                 }
             }.bind(this);
-    
+
             db.collection(this.envCollectionName(collection)).updateMany(
-                filter, 
-                setter, 
-                ops, 
+                filter,
+                setter,
+                ops,
                 callback);
-    
+
         }.bind(this));
     }
 
     public async findOneAndDelete<T extends IDbEntity>(collection: string, filter: any, ctor: (obj: any) => T): Promise<T> {
-        return new Promise<T>(async function(this: Database, resolve, reject){
+        return new Promise<T>(async function (this: Database, resolve, reject) {
             try {
                 await this.ensureClientConnection();
             } catch (err) {
@@ -887,11 +948,11 @@ export class Database implements IDatabase {
 
             let db = this._client.db(this._settings.current.databaseName);
             assert.notEqual(db, null);
-    
+
             let callback: MongoCallback<FindAndModifyWriteOpResultObject> = function (error: MongoError, res: FindAndModifyWriteOpResultObject) {
                 if (res && res.ok === 1 && res.value) {
                     resolve(ctor ? ctor(res.value) : undefined);
-                } else if (error) { 
+                } else if (error) {
                     reject(Error(error.message));
                 } else {
                     reject(Error(`nothing was deleted from ${collection} by ${JSON.stringify(filter)}`));
@@ -921,7 +982,7 @@ export class Database implements IDatabase {
 
     private async safe<T>(promise: Promise<T>): Promise<T> {
         try {
-            let res:T = await promise;
+            let res: T = await promise;
             return res;
         } catch {
             return undefined;

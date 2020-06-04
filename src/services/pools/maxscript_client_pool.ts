@@ -5,6 +5,8 @@ import { IFactory, IMaxscriptClient, ISessionService } from "../../interfaces";
 import { Session } from "../../database/model/session";
 import { SessionPoolBase } from "../../core/session_pool_base";
 
+const uuidv4 = require("uuid/v4");
+
 @injectable()
 export class MaxScriptClientPool extends SessionPoolBase<IMaxscriptClient> {
 
@@ -21,6 +23,8 @@ export class MaxScriptClientPool extends SessionPoolBase<IMaxscriptClient> {
     public id: number;
 
     protected async onBeforeItemAdd(session: Session, maxscript: IMaxscriptClient): Promise<boolean> {
+        console.log(` >> onBeforeItemAdd: `, session);
+
         // try to connect to worker remote maxscript endpoint
         try {
             await maxscript.connect(session.workerRef.ip, session.workerRef.port);
@@ -77,6 +81,13 @@ export class MaxScriptClientPool extends SessionPoolBase<IMaxscriptClient> {
 
     protected async onBeforeItemRemove(closedSession: Session, maxscript: IMaxscriptClient): Promise<any> {
         try {
+            console.log(` >> onBeforeItemRemove: `, closedSession);
+            const dumpSceneAs = `dump_apiKey=${closedSession.apiKey}_sessionGuid=${closedSession.guid}.max`;
+            if (closedSession.debug) {
+                await maxscript.saveScene(dumpSceneAs, closedSession.workspaceRef);
+            }
+            await maxscript.dumpScene(`C:\\\\Temp\\\\${dumpSceneAs}`);
+            await maxscript.resetScene();
             maxscript.disconnect();
         } catch (err) {
             console.log(`  WARN | client.disconnect threw exception, `, err);

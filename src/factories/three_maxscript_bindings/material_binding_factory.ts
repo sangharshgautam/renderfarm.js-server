@@ -14,9 +14,9 @@ export class MaterialBindingFactory implements IFactory<IMaterialBinding> {
         this._maxscriptClientPool = maxscriptClientPool;
     }
 
-    public async Create(session: Session): Promise<IMaterialBinding> 
+    public async Create(session: Session, materialJson: any): Promise<IMaterialBinding> 
     {
         let maxscript: IMaxscriptClient = await this._maxscriptClientPool.Get(session);
-        return new MaterialBinding(maxscript);
+        return new MaterialBinding(maxscript, materialJson);
     }
 }

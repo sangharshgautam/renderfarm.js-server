@@ -1,8 +1,18 @@
 import { IDbEntity } from "./base/IDbEntity";
 
+interface IWorkgroupPermissions {
+    limitSessions: number;
+}
+
+interface IWorkgroups {
+    [name: string]: IWorkgroupPermissions
+}
+
 export class ApiKey extends IDbEntity {
+
     public apiKey: string;
     public userGuid: string;
+    public workgroups: IWorkgroups;
     public lastSeen: Date;
 
     constructor(obj: any) {
@@ -14,13 +24,15 @@ export class ApiKey extends IDbEntity {
         this.apiKey   = obj.apiKey;
         this.userGuid = obj.userGuid;
         this.lastSeen = obj.lastSeen ? new Date(obj.lastSeen) : undefined;
+        this.workgroups = obj.workgroups;
     }
 
     public toJSON() {
         return {
             apiKey:   this.apiKey,
             userGuid: this.userGuid,
-            lastSeen: this.lastSeen
+            lastSeen: this.lastSeen,
+            workgroups: this.workgroups,
         };
     }
 

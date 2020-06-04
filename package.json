@@ -6,12 +6,18 @@
   "dependencies": {
     "@types/express": "^4.16.1",
     "axios": "^0.18.0",
+    "connect-timeout": "^1.9.0",
+    "console-stamp": "^0.2.9",
+    "cors": "^2.8.5",
     "deep-diff": "^1.0.2",
     "express": "^4.16.4",
     "https": "^1.0.0",
     "inversify": "^5.0.1",
+    "jszip": "^3.2.2",
     "lz-string": "^1.4.4",
-    "mime-types": "^2.1.22",
+    "md5": "^2.2.1",
+    "mime-types": "^2.1.26",
+    "mixpanel": "^0.11.0",
     "mongodb": "^3.1.13",
     "multer": "^1.4.1",
     "reflect-metadata": "^0.1.13",
@@ -26,10 +32,13 @@
     "form-data": "^2.3.3",
     "ftp": "^0.3.10",
     "jasmine-reporters": "^2.3.2",
-    "tmp": "0.0.33"
+    "tmp": "0.0.33",
+    "typescript": "^3.7.4"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "node ./node_modules/typescript/bin/tsc",
+    "dev": "npm run build && export NODE_ENV=dev && node ./dist/index.js",
+    "dev2": "npm run build && export NODE_ENV=dev2 && node ./dist2/index.js",
     "test-spec": "tsc & jasmine --config=jasmine.spec.json",
     "test-depl": "tsc & jasmine --config=jasmine.depl.json"
   },

@@ -8,6 +8,9 @@ import { myContainer } from "./inversify.config";
 import { TYPES } from "./types";
 import { IDatabase, IApp, ISettings } from "./interfaces";
 
+// add timestamps in front of log messages
+require('console-stamp')(console, '[HH:MM:ss.l]');
+
 const settings: ISettings = myContainer.get<ISettings>(TYPES.ISettings);
 console.log(`Starting api version: ${settings.version}`);
 

@@ -42,7 +42,7 @@ describe("Database Job", function() {
 
             expect(job).toBeTruthy();
             expect(job.guid).toBe(helpers.existingJobGuid);
-            expect(job.apiKey).toBe(helpers.existingApiKey);
+            expect(job.apiKey).toBe(helpers.existingApiKey.apiKey);
 
             expect(job.createdAt).toEqual(new Date("2000-01-01 00:00:00.000"));
             expect(job.updatedAt).toEqual(new Date("2000-01-01 00:00:00.000"));
@@ -105,7 +105,7 @@ describe("Database Job", function() {
         })
 
         async function createSomeJob() {
-            let jobAdded = await database.createJob(helpers.existingApiKey, helpers.existingWorkerGuid, "someCameraName", null, 100, 200, {});
+            let jobAdded = await database.createJob(helpers.existingApiKey, helpers.existingWorkerGuid, { name: "someCameraName"}, null, 100, 200, true, {});
             expect(jobAdded).toBeTruthy();
 
             return jobAdded;
@@ -118,15 +118,16 @@ describe("Database Job", function() {
 
             expect(job).toBeTruthy();
             expect(job.guid).toBe(newJob.guid);
-            expect(job.apiKey).toBe(helpers.existingApiKey);
+            expect(job.apiKey).toBe(helpers.existingApiKey.apiKey);
             expect(job.workerGuid).toBe(helpers.existingWorkerGuid);
             expect(job.state).toBe("pending");
             expect(Date.now() - job.createdAt.getTime()).toBeLessThan(3000);
             expect(job.updatedAt.getTime()).toBeGreaterThanOrEqual(newJob.createdAt.getTime());
 
-            expect(job.cameraName).toBe("someCameraName");
+            expect(job.cameraJson.name).toBe("someCameraName");
             expect(job.renderWidth).toBe(100);
             expect(job.renderHeight).toBe(200);
+            expect(job.alpha).toBe(true);
 
             done();
         })

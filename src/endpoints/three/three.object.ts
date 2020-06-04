@@ -12,11 +12,11 @@ class ThreeObjectEndpoint implements IEndpoint {
     private _sessionService: ISessionService;
     private _threeMaxscriptBridgePool: ISessionPool<IThreeMaxscriptBridge>;
 
-    private _objects: { [sessionGuid: string] : any; } = {};
+    private _objects: { [sessionGuid: string]: any; } = {};
 
     constructor(@inject(TYPES.ISettings) settings: ISettings,
-                @inject(TYPES.ISessionService) sessionService: ISessionService,
-                @inject(TYPES.IThreeMaxscriptBridgePool) threeMaxscriptBridgePool: ISessionPool<IThreeMaxscriptBridge>,
+        @inject(TYPES.ISessionService) sessionService: ISessionService,
+        @inject(TYPES.IThreeMaxscriptBridgePool) threeMaxscriptBridgePool: ISessionPool<IThreeMaxscriptBridge>,
     ) {
         this._settings = settings;
         this._sessionService = sessionService;
@@ -53,18 +53,20 @@ class ThreeObjectEndpoint implements IEndpoint {
             let sessionGuid = req.body.session_guid;
             console.log(`POST on ${req.path} with session: ${sessionGuid}`);
 
+            req.connection.setTimeout(15 * 60 * 1000); // 15 min
+
             // check that session is actually open
-            let session: Session = await this._sessionService.GetSession(sessionGuid, false, false);
+            let session: Session = await this._sessionService.GetSession(sessionGuid, false, false, true);
             if (!session) {
                 return;
             }
 
             // check that session has no active job, i.e. it is not being rendered
-            if (session.workerRef && session.workerRef.jobRef) {
-                res.status(403);
-                res.end(JSON.stringify({ ok: false, message: "changes forbidden, session is being rendered", error: null }, null, 2));
-                return;
-            }
+            //if (session.workerRef && session.workerRef.jobRef) {
+            //    res.status(403);
+            //    res.end(JSON.stringify({ ok: false, message: "changes forbidden, session is being rendered", error: null }, null, 2));
+            //    return;
+            //}
 
             let compressedJson = req.body.compressed_json; // this is to create scene or add new obejcts to scene
             if (!compressedJson) {
@@ -75,6 +77,8 @@ class ThreeObjectEndpoint implements IEndpoint {
 
             let sceneJsonText = LZString.decompressFromBase64(compressedJson);
             let sceneJson: any = JSON.parse(sceneJsonText);
+
+            console.log(` >> received scene: `, JSON.stringify(sceneJson, null, 2));
 
             if (!this.validateObjectJson(sceneJson, res)) {
                 return;

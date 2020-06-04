@@ -6,6 +6,7 @@ import { Worker } from "../database/model/worker";
 
 ///<reference path="./typings/node/node.d.ts" />
 import { EventEmitter } from "events";
+import { ApiKey } from "../database/model/api_key";
 
 @injectable()
 export class SessionService extends EventEmitter implements ISessionService {
@@ -42,20 +43,23 @@ export class SessionService extends EventEmitter implements ISessionService {
     public GetSession(sessionGuid: string, allowClosed?: boolean, letTouch?: boolean, resolveRefs?: boolean): Promise<Session> {
         return this._database.getSession(
             sessionGuid,
-            { 
-                allowClosed: allowClosed, 
+            {
+                allowClosed: allowClosed,
                 readOnly: !letTouch,
                 resolveRefs: resolveRefs,
             },
         );
     }
 
-    public async CreateSession(apiKey: string, workspaceGuid: string, sceneFilename?: string): Promise<Session> {
+    public async CreateSession(apiKey: ApiKey, workgroup: string, workspaceGuid: string, sceneFilename?: string, debug?: boolean): Promise<Session> {
+        console.log(`    creating session: ${apiKey.apiKey}, ${workgroup}, ${workspaceGuid}, ${sceneFilename}`)
         let createdSession = await this._database.createSession(
             apiKey,
+            workgroup,
             workspaceGuid,
             sceneFilename,
-        );
+            debug,
+        )
         this.emit(SessionServiceEvents.Created, createdSession);
         return createdSession;
     }
@@ -91,7 +95,7 @@ export class SessionService extends EventEmitter implements ISessionService {
 
     private StartSessionWatchdogTimer(sessionTimeoutMinutes: number) {
         //expire sessions by timer
-        setInterval(async function(this: SessionService) {
+        setInterval(async function (this: SessionService) {
             try {
                 let expiredSession = await this.ExpireSessions(sessionTimeoutMinutes);
                 if (expiredSession.length === 0) {

@@ -62,15 +62,26 @@ class JobEndpoint implements IEndpoint {
 
             this._sessionService.KeepSessionAlive(job.workerRef.sessionGuid);
 
+            let jobJson = job.toJSON();
+            if (jobJson.cameraJson) {
+                delete jobJson.cameraJson;
+            }
+            if (job.workerRef) {
+                jobJson.vrayProgress = job.workerRef.vrayProgress;
+            }
+
             res.status(200);
-            res.end(JSON.stringify({ ok: true, type: "jobs", data: job.toJSON() }, null, 2));
+            res.end(JSON.stringify({ ok: true, type: "jobs", data: jobJson }, null, 2));
         }.bind(this));
 
         express.post(`/v${this._settings.majorVersion}/job`, async function (this: JobEndpoint, req: express.Request, res: express.Response) {
             let sessionGuid = req.body.session_guid;
             console.log(`POST on ${req.path} with session: ${sessionGuid}`);
 
-            let cameraName = req.body.camera_name;
+            let cameraJson = req.body.camera_json;
+            console.log(` >> camera json: `, cameraJson);
+
+            let cameraName = cameraJson ? cameraJson.name : null;
             let bakeMeshUuid = req.body.bake_mesh_uuid;
 
             if (cameraName && bakeMeshUuid) {
@@ -104,20 +115,22 @@ class JobEndpoint implements IEndpoint {
                 return;
             }
 
+            let alpha = !!req.body.alpha;
+
             let session: Session = await this._sessionService.GetSession(sessionGuid, false, false, true);
             if (!session) {
                 return;
             }
 
-            let activeJobs: Job[] = await this._database.getActiveJobs(this._settings.current)
-            if (activeJobs.find(el => el.workerGuid === session.workerGuid)) {
-                console.log(`  FAIL | session busy: ${sessionGuid}`);
-                res.status(404);
-                res.end(JSON.stringify({ ok: false, message: "session busy", error: null }, null, 2));
-                return;
-            }
+            // let activeJobs: Job[] = await this._database.getActiveJobs(this._settings.current)
+            // if (activeJobs.find(el => el.workerGuid === session.workerGuid)) {
+            //     console.log(`  FAIL | session busy: ${sessionGuid}`);
+            //     res.status(404);
+            //     res.end(JSON.stringify({ ok: false, message: "session busy", error: null }, null, 2));
+            //     return;
+            // }
 
-            let job = await this._database.createJob(session.apiKey, session.workerGuid, cameraName, bakeMeshUuid, renderWidth, renderHeight, renderSettings);
+            let job = await this._database.createJob(session.apiKeyRef, session.workerGuid, cameraJson, bakeMeshUuid, renderWidth, renderHeight, alpha, renderSettings);
 
             this._jobService.Start(session, job);
 

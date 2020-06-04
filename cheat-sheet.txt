@@ -1,0 +1,2 @@
+rm ~/*.log && pm2 stop all && pm2 delete index && tsc
+pm2 start ./dist/index.js --log ~/1.log

@@ -6,11 +6,12 @@ export class Job extends IDbEntity {
     public guid: string;
     public apiKey: string;
 
-    public cameraName: string;
+    public cameraJson: any;
     public bakeMeshUuid: string;
 
     public renderWidth: number;
     public renderHeight: number;
+    public alpha: boolean;
     public renderSettings: any;
 
     public createdAt: Date;
@@ -39,11 +40,12 @@ export class Job extends IDbEntity {
         this.guid       = obj.guid;
         this.apiKey     = obj.apiKey;
 
-        this.cameraName     = obj.cameraName;
+        this.cameraJson   = obj.cameraJson;
         this.bakeMeshUuid = obj.bakeMeshUuid;
 
         this.renderWidth    = obj.renderWidth;
         this.renderHeight   = obj.renderHeight;
+        this.alpha          = obj.alpha;
         this.renderSettings = obj.renderSettings;
 
         this.createdAt  = obj.createdAt ? new Date(obj.createdAt) : undefined;
@@ -63,11 +65,12 @@ export class Job extends IDbEntity {
             guid:       this.guid,
             apiKey:     this.apiKey,
 
-            cameraName:     this.cameraName,
+            cameraJson:   this.cameraJson,
             bakeMeshUuid: this.bakeMeshUuid,
 
             renderWidth:    this.renderWidth,
             renderHeight:   this.renderHeight,
+            alpha:          this.alpha,
             renderSettings: this.renderSettings,
 
             createdAt:  this.createdAt,

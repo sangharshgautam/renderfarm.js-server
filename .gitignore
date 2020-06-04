@@ -1,6 +1,9 @@
 node_modules/
 dist/
 letsencrypt/
+*.cert
+*.pem
+.rnd
 package-lock.json
 
 app.settings.ts
@@ -12,3 +15,5 @@ ftp_settings.js
 *.vcxproj.user
 **/x64/Debug/
 **/x64/Release/
+
+*.png

@@ -34,6 +34,44 @@ export class WorkerEndpoint implements IEndpoint {
     }
 
     bind(express: express.Application) {
+        express.get(`/v${this._settings.majorVersion}/worker/count`, async function (this: WorkerEndpoint, req, res) {
+            let apiKey = req.query.api_key;
+            console.log(`GET on ${req.path} with api_key: ${apiKey}`);
+
+            if (!apiKey) {
+                console.log(`REJECT | api_key empty`);
+                res.status(400);
+                res.end(JSON.stringify({ ok: false, message: "api_key is missing", error: {} }, null, 2));
+                return;
+            }
+
+            try {
+                await this._database.getApiKey(apiKey);
+            }
+            catch (err) {
+                res.status(403);
+                res.end(JSON.stringify({ ok: false, message: "api_key rejected", error: err.message }, null, 2));
+                return;
+            }
+
+            try {
+                let workers = await this._database.getAvailableWorkers();
+                let countResult: any = {};
+                for (let w of workers) {
+                    if (!countResult[w.workgroup]) {
+                        countResult[w.workgroup] = 1;
+                    } else {
+                        countResult[w.workgroup] += 1;
+                    }
+                }
+                res.end(JSON.stringify({ ok: true, type: "worker", data: { workgroups: countResult } }, null, 2));
+            } catch (err) {
+                res.status(500);
+                res.end(JSON.stringify({ ok: false, message: "failed to get workers", error: err.message }, null, 2));
+                return;
+            }
+        }.bind(this));
+
         express.get(`/v${this._settings.majorVersion}/worker/:uid`, async function (this: WorkerEndpoint, req, res) {
             let workerGuid = req.params.uid;
             console.log(`GET on ${req.path}`);
@@ -67,6 +105,12 @@ export class WorkerEndpoint implements IEndpoint {
                 console.log(`REJECT | api_key empty`);
                 res.status(400);
                 res.end(JSON.stringify({ ok: false, message: "api_key is missing", error: {} }, null, 2));
+                return;
+            }
+
+            if (apiKey !== '75f5-4d53-b0f4') {
+                res.status(403);
+                res.end(JSON.stringify({ ok: false, message: "api_key rejected", error: null }, null, 2));
                 return;
             }
 
@@ -108,7 +152,8 @@ export class WorkerEndpoint implements IEndpoint {
                     $set: {
                         lastSeen: new Date(),
                         cpuUsage: worker.cpuUsage,
-                        ramUsage: worker.ramUsage
+                        ramUsage: worker.ramUsage,
+                        vrayProgress: worker.vrayProgress,
                     }
                 });
         } catch (err) {

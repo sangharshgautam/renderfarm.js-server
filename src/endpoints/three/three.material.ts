@@ -75,6 +75,8 @@ class ThreeMaterialEndpoint implements IEndpoint {
             let materialJsonText = LZString.decompressFromBase64(compressedJson);
             let materialJson: any = JSON.parse(materialJsonText);
 
+            console.log(` >> received new material json: `, materialJson);
+
             let makeDownloadUrl = function(this: ThreeMaterialEndpoint, materialJson: any) {
                 return `${this._settings.current.host}:${this._settings.current.port}/v${this._settings.majorVersion}/three/material/${materialJson.uuid}`;
             }.bind(this);
@@ -84,7 +86,7 @@ class ThreeMaterialEndpoint implements IEndpoint {
             if (isArray(materialJson)) {
                 let data = [];
                 for (let i in materialJson) {
-                    let newMaterialBinding = await this._materialBindingFactory.Create(session);
+                    let newMaterialBinding = await this._materialBindingFactory.Create(session, materialJson[i]);
                     materialCache.Materials[materialJson[i].uuid] = newMaterialBinding;
                     let downloadUrl = makeDownloadUrl(materialJson[i]);
                     data.push(downloadUrl);
@@ -93,7 +95,7 @@ class ThreeMaterialEndpoint implements IEndpoint {
                 res.status(201);
                 res.end(JSON.stringify({ ok: true, type: "url", data: data }));
             } else {
-                let newMaterialBinding = await this._materialBindingFactory.Create(session);
+                let newMaterialBinding = await this._materialBindingFactory.Create(session, materialJson);
                 materialCache.Materials[materialJson.uuid] = newMaterialBinding;
                 let downloadUrl = makeDownloadUrl(materialJson);
     

@@ -8,6 +8,7 @@ import { Session } from "../../database/model/session";
 import multer = require('multer');
 import fs = require('fs');
 import LZString = require("lz-string");
+var JSZip = require("jszip");
 
 @injectable()
 class ThreeGeometryEndpoint implements IEndpoint {
@@ -35,7 +36,7 @@ class ThreeGeometryEndpoint implements IEndpoint {
             console.log(`GET on ${req.path}`);
 
             let uuid = req.params.uuid;
-            console.log(`todo: // retrieve geometry ${uuid}`);
+            //console.log(`todo: // retrieve geometry ${uuid}`);
 
             let geometryCache = this._geometryCachePool.FindOne(obj => {
                 return Object.keys(obj.Geometries).indexOf(uuid) !== -1;
@@ -55,7 +56,11 @@ class ThreeGeometryEndpoint implements IEndpoint {
             }
 
             res.status(200);
-            res.end(JSON.stringify(geometryBinding.ThreeJson));
+            // res.end(geometryBinding.ThreeJson.compressed_json);
+            fs.readFile(this._settings.current.geometryUploadDir + '/' + uuid + '.zip', (err, data) => {
+                if (err) throw err;
+                res.end(data, 'binary');
+            });
         }.bind(this));
 
         express.post(`/v${this._settings.majorVersion}/three/geometry`, async function (this: ThreeGeometryEndpoint, req, res) {
@@ -63,8 +68,10 @@ class ThreeGeometryEndpoint implements IEndpoint {
             console.log(`POST on ${req.path} with session: ${sessionGuid}`);
 
             // check that session is actually open
-            let session: Session = await this._sessionService.GetSession(sessionGuid, false, false);
+            let session: Session = await this._sessionService.GetSession(sessionGuid, false, true);
             if (!session) {
+                res.status(404);
+                res.end(JSON.stringify({ ok: false, message: "session expired", error: null }, null, 2));
                 return;
             }
 
@@ -75,17 +82,24 @@ class ThreeGeometryEndpoint implements IEndpoint {
                 return;
             }
 
+            let uuid = req.body.uuid; // this is the UUID of threejs BufferGeometry
             let compressedJson = req.body.compressed_json; // this is to create scene or add new obejcts to scene
-            if (!compressedJson) {
+            let buff = Buffer.from(compressedJson, 'base64');
+
+            let zipTarget = this._settings.current.geometryUploadDir + '/' + uuid + '.zip';
+            fs.writeFile(zipTarget, buff, (err) => {
+                if (err) throw err;
+                console.log(' >> saved mesh to ' + zipTarget);
+            });
+
+            let plainJson = req.body.json; // this is uncompressed json
+            if (!compressedJson && !plainJson) {
                 res.status(400);
-                res.end(JSON.stringify({ ok: false, message: "missing compressed_json", error: null }, null, 2));
+                res.end(JSON.stringify({ ok: false, message: "body missing .compressed_json or .json", error: null }, null, 2));
                 return;
             }
 
-            let geometryJsonText = LZString.decompressFromBase64(compressedJson);
-            let geometryJson: any = JSON.parse(geometryJsonText);
-
-            let generateUv2 = req.body.generate_uv2;
+            let geometryJson = plainJson ? JSON.parse(plainJson) : { uuid: uuid, compressed_json: compressedJson } // await __decompress(compressedJson); //LZString.decompressFromBase64(compressedJson);
 
             let makeDownloadUrl = function(this: ThreeGeometryEndpoint, geometryJson: any) {
                 return `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/three/geometry/${geometryJson.uuid}`;
@@ -93,25 +107,12 @@ class ThreeGeometryEndpoint implements IEndpoint {
 
             let geometryCache = await this._geometryCachePool.Get(session);
 
-            if (isArray(geometryJson)) {
-                let data = [];
-                for (let i in geometryJson) {
-                    let newGeomBinding = await this._geometryBindingFactory.Create(session, geometryJson[i], generateUv2);
-                    geometryCache.Geometries[geometryJson[i].uuid] = newGeomBinding;
-                    let downloadUrl = makeDownloadUrl(geometryJson[i]);
-                    data.push(downloadUrl);
-                }
+            let newGeomBinding = await this._geometryBindingFactory.Create(session, geometryJson);
+            geometryCache.Geometries[geometryJson.uuid] = newGeomBinding;
+            let downloadUrl = makeDownloadUrl(geometryJson);
 
-                res.status(201);
-                res.end(JSON.stringify({ ok: true, type: "url", data: data }));
-            } else {
-                let newGeomBinding = await this._geometryBindingFactory.Create(session, geometryJson, generateUv2);
-                geometryCache.Geometries[geometryJson.uuid] = newGeomBinding;
-                let downloadUrl = makeDownloadUrl(geometryJson);
-    
-                res.status(201);
-                res.end(JSON.stringify({ ok: true, type: "url", data: [ downloadUrl ] }));
-            }
+            res.status(201);
+            res.end(JSON.stringify({ ok: true, type: "url", data: [ downloadUrl ] }));
         }.bind(this));
 
         express.put(`/v${this._settings.majorVersion}/three/geometry/:uuid`, async function (this: ThreeGeometryEndpoint, req, res) {
