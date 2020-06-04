@@ -1,5 +1,6 @@
 import { ISceneObjectBinding, IMaxscriptClient, IGeometryCache, IMaterialCache, IImageCache, ITextureCache } from "../../interfaces";
 import { Workspace } from "../../database/model/workspace";
+import uuidv4 = require("uuid/v4");
 
 export abstract class SceneObjectBindingBase implements ISceneObjectBinding {
     protected _maxscriptClient: IMaxscriptClient;
@@ -36,7 +37,7 @@ export abstract class SceneObjectBindingBase implements ISceneObjectBinding {
     public abstract Delete(): Promise<any>;
 
     protected getObjectName(obj: any): string {
-        let parts = obj.uuid.split("-");
+        let parts = (obj.uuid || uuidv4()).split("-");
 
         if (obj.name) {
             let safeName = obj.name.replace(/\W/g, '');

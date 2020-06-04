@@ -161,9 +161,12 @@ class MaxscriptClient implements IMaxscriptClient {
         let maxscript = `xrefSceneFilename = "${workspace.homeDir}\\\\api-keys\\\\${workspace.apiKey}\\\\workspaces\\\\${workspace.guid}\\\\xrefs\\\\${maxSceneFilename}" ; \r\n`
             + `if existFile xrefSceneFilename then ( \r\n`
             + `    xrefSceneParent = Dummy() ; \r\n`
+            + `    xrefSceneParent.boxsize = [1,1,1] ; \r\n`
+
             + `    xrefSceneParent.name = "${nodeName}" ; \r\n`
 
             + `    xrefSceneRoot = Dummy() ; \r\n`
+            + `    xrefSceneRoot.boxsize = [1,1,1] ; \r\n`
             + `    xrefSceneRoot.name = "xref" ; \r\n`
 
             + `    xrefFile0 = xrefs.addNewXRefFile xrefSceneFilename ; \r\n`
@@ -252,6 +255,7 @@ fullpath = (dir + "\\" + filename)
 
     createSceneRoot(maxName: string): Promise<boolean> {
         let maxscript = `aSceneRoot = Dummy() ; \r\n`
+            + ` aSceneRoot.boxsize = [1,1,1] ; \r\n`
             + ` aSceneRoot.name = \"${maxName}\" ; \r\n`
             + ` rotate aSceneRoot (eulerangles 90 0 0)`;
 
@@ -262,11 +266,44 @@ fullpath = (dir + "\\" + filename)
 
     createDummy(maxName: string): Promise<boolean> {
         let maxscript = `aDummy = Dummy() ; \r\n`
+            + ` aDummy.boxsize = [1,1,1] ; \r\n`
             + ` aDummy.name = \"${maxName}\" ;`;
 
         console.log(" >> DUMMY: ", maxscript);
 
         return this.execMaxscript(maxscript, "createDummy");
+    }
+
+    createObject(maxName: string, objectName: string, objectJson: any): Promise<boolean> {
+        let maxscript =
+            `aDummy = Dummy() ; \r\n`
+            + `aDummy.boxsize = [1,1,1] ; \r\n`
+            + `aDummy.name = \"${maxName}\" ; \r\n`
+            + `aObj = ${objectJson.type}() ; \r\n`
+            + `aObj.name = \"${objectName}\" ; \r\n`
+            + `rotate aObj (eulerangles -90 0 0) ; \r\n `
+            + `aObj.parent = aDummy ; \r\n`
+
+        const keys = Object.keys(objectJson.params);
+        for (let key of keys) {
+            const value = objectJson.params[key];
+            if (typeof value === "string") {
+                const maxscriptValue = value.replace(/\\/g, "\\\\");
+                objectJson.params[key] = maxscriptValue;
+            } else {
+                const maxscriptValue = value;
+                objectJson.params[key] = maxscriptValue;
+            }
+        }
+
+        for (let key in objectJson.params) {
+            const value = objectJson.params[key];
+            maxscript += `  try ( aObj.${key} = ${value} ; ) catch ( false ) \r\n`;
+        }
+
+        console.log(" >> OBJECT: ", maxscript);
+
+        return this.execMaxscript(maxscript, "createObject");
     }
 
     createTargetCamera(cameraName: string, cameraJson: any): Promise<boolean> {
@@ -506,6 +543,15 @@ fullpath = (dir + "\\" + filename)
 
             for (let key in materialJson.params) {
                 const value = materialJson.params[key];
+
+                if (key.match(/texmap_\w+\.fileName$/g)) {
+                    const subKey = key.replace(".fileName", "");
+                    maxscript +=
+                        `if matCopy.${subKey} == undefined then ( \r\n `
+                        + `  matCopy.${subKey} = BitmapTexture(); \r\n `
+                        + `) \r\n `;
+                }
+
                 // is value direct file URL ?
                 if (typeof value === "string"
                     && (
@@ -522,9 +568,16 @@ fullpath = (dir + "\\" + filename)
                     const downloadUrl = `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/externalasset/${randomFilename}?api_key=${this._session.apiKey}&url=${value}`;
                     // for example:
                     // cmdexRun "C:\\bin\\curl -v -O \"https://api2.renderfarmjs.com/v1/externalasset/1.png?api_key=0dc0-4324-aacd&url=http://renderfarmjs.com/img/vray.png\" "
+
                     const downloadedMapPath = "C:\\\\Temp\\\\" + randomFilename;
                     maxscript += `res = cmdexRun "${curlPath} -k -s \\\"${downloadUrl}\\\" -o \\\"${downloadedMapPath}\\\" " ; \r\n`;
-                    maxscript += `if res then (\r\n  try ( matCopy.${key} = \"${downloadedMapPath}\" ; ) catch ( false ) \r\n) \r\n `;
+                    maxscript += `if res then (\r\n `
+                        + `  try ( \r\n `
+                        + `    matCopy.${key} = \"${downloadedMapPath}\" ; \r\n `
+                        + `  ) \r\n `
+                        + `  catch ( false ) \r\n `
+                        + `) \r\n `;
+
                 } else {
                     maxscript += `  try ( matCopy.${key} = ${value} ; ) catch ( false ) \r\n`;
                 }

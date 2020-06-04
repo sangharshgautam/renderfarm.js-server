@@ -1,5 +1,6 @@
 import { SceneObjectBindingBase } from "./scene_object_binding_base";
 import { PostResult } from "../../interfaces";
+import uuidv4 = require("uuid/v4");
 
 export class MeshBinding extends SceneObjectBindingBase {
     public static SrcType: string = "Mesh";
@@ -33,8 +34,9 @@ export class MeshBinding extends SceneObjectBindingBase {
         } else {
             let geometry = this._geometryCache.Geometries[objectJson.geometry];
             let material = Array.isArray(objectJson.material)
-                        ? objectJson.material.map(m => this._materialCache.Materials[m])
-                        : this._materialCache.Materials[objectJson.material];
+                ? objectJson.material.map(m => this._materialCache.Materials[m])
+                : this._materialCache.Materials[objectJson.material];
+
             if (material) {
                 console.log(` >> MeshBinding resolved material: `, material.ThreeJson);
             }
@@ -52,7 +54,14 @@ export class MeshBinding extends SceneObjectBindingBase {
                 console.log(`   WARN | material not cached: ${objectJson.material}`);
             }
 
-            postResult = await geometry.Post(objectJson.uuid, meshName);
+            let objectMaxName = null; // this object will be generated from userData.objectJson
+            if (objectJson.userData && objectJson.userData.objectJson && objectJson.userData.objectJson.type) {
+                objectMaxName = this.getObjectName(objectJson.userData.objectJson);
+                console.log(` >> object will be created by objectJson: `, objectJson.userData.objectJson);
+                await this._maxscriptClient.createObject(meshName, objectMaxName, objectJson.userData.objectJson);
+            } else {
+                postResult = await geometry.Post(objectJson.uuid, meshName);
+            }
             await this._maxscriptClient.linkToParent(meshName, parentName);
             await this._maxscriptClient.setObjectMatrix(meshName, objectJson.matrix);
 
@@ -78,14 +87,14 @@ export class MeshBinding extends SceneObjectBindingBase {
 
                     let materialName = material.ThreeJson.name;
                     console.log(` >> material will be cloned and assigned: `, materialName);
-                    await this._maxscriptClient.assignMaterial(meshName, materialName, objectJson.userData.materialJson);
+                    await this._maxscriptClient.assignMaterial(objectMaxName || meshName, materialName, objectJson.userData.materialJson);
                 } else {
                     let materialName = material.ThreeJson.name;
                     console.log(` >> material will be assigned: `, materialName);
-                    await this._maxscriptClient.assignMaterial(meshName, materialName);
+                    await this._maxscriptClient.assignMaterial(objectMaxName || meshName, materialName);
                 }
             }
-    
+
             if (Array.isArray(material)) {
                 let materialNames = material.map(m => m.ThreeJson.name);
                 console.log(` >> assign multiSubMaterial: `, materialNames);
