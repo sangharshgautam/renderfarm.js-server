@@ -583,8 +583,7 @@ fullpath = (dir + "\\" + filename)
                 }
             }
 
-            maxscript += `  $${nodeName}.Material = matCopy; \r\n`
-            maxscript += `) \r\n`;
+            maxscript += `$${nodeName}.Material = matCopy; \r\n`;
         } else {
             maxscript = `mat = rayysFindMaterialByName "${materialName}"; `
                 + `if (mat != false) then (`
