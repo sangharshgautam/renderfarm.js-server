@@ -501,7 +501,8 @@ fullpath = (dir + "\\" + filename)
 
     importMesh(path: string, nodeName: string): Promise<boolean> {
         console.log(" >> importing mesh from ", path);
-        let maxscript = `threejsImportBufferGeometry \"${path}\" \"${nodeName}\"`;
+        let maxscript = `threejsImportBufferGeometry \"${path}\" \"${nodeName}\" ;\r\n`
+                      + `$${nodeName}.wireColor = (color 255 255 255); \r\n`;
 
         console.log(" >> maxscript: " + maxscript);
 
@@ -537,9 +538,13 @@ fullpath = (dir + "\\" + filename)
             delete materialJson["$"];
 
             maxscript = `mat = rayysFindMaterialByName "${materialName}"; \r\n`
+                + `matCopy = 0; \r\n`
                 + `if (mat != false) then ( \r\n`
-                + `  matCopy = copy mat; \r\n `
-                + `  matCopy.name = "${materialCopyName}"; \r\n `;
+                + `  matCopy = copy mat; \r\n`
+                + `) else ( \r\n`
+                + `  matCopy = VrayMtl(); \r\n`
+                + `) \r\n`
+                + `matCopy.name = "${materialCopyName}"; \r\n `;
 
             for (let key in materialJson.params) {
                 const value = materialJson.params[key];
