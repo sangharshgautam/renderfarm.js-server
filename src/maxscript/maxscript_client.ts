@@ -560,10 +560,10 @@ fullpath = (dir + "\\" + filename)
                 // is value direct file URL ?
                 if (typeof value === "string"
                     && (
-                        (value.indexOf("http://") === 0
-                            || value.indexOf("https://") === 0
-                        ) && (value.endsWith(".png")
-                            || value.endsWith(".jpg")
+                        (value.toLowerCase().indexOf("http://") === 0
+                            || value.toLowerCase().indexOf("https://") === 0
+                        ) && (value.toLowerCase().endsWith(".png")
+                            || value.toLowerCase().endsWith(".jpg")
                         )
                     )
                 ) {
