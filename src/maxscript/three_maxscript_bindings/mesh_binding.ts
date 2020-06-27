@@ -68,21 +68,6 @@ export class MeshBinding extends SceneObjectBindingBase {
             console.log(` >> mesh binding, considering material`);
             if (material && material.ThreeJson && material.ThreeJson.name) {
                 if (objectJson.userData && objectJson.userData.materialJson) {
-                    //const textureVars = {};
-
-                    //if (material.ThreeJson.map) {
-                    //    const textureBinding = this._textureCache.Textures[material.ThreeJson.map];
-                    //    const imageBinding = this._imageCache.Images[textureBinding.ThreeJson.image];
-                    //    if (textureBinding && imageBinding) {
-                    //        console.log(` >> mesh binding, material.map texture: `, material.ThreeJson.map, " , texture.image: ", textureBinding.ThreeJson.image);
-                    //        const res1 = await imageBinding.Post();
-                    //        await textureBinding.Post(res1.path, "diffuseTexture");
-                    //        textureVars["map"] = "diffuseTexture";
-                    //    } else {
-                    //        console.log(`  WARN | mesh binding, material.map image not found in ImageCache: `, material.ThreeJson.map);
-                    //    }
-                    //}
-
                     objectJson.userData.materialJson["$"] = material.ThreeJson;
 
                     let materialName = material.ThreeJson.name;
@@ -95,10 +80,22 @@ export class MeshBinding extends SceneObjectBindingBase {
                 }
             }
 
-            if (Array.isArray(material)) {
+            if (material && Array.isArray(material)) {
                 let materialNames = material.map(m => m.ThreeJson.name);
-                console.log(` >> assign multiSubMaterial: `, materialNames);
-                await this._maxscriptClient.assignMultiSubMaterial(meshName, materialNames);
+                if (objectJson.userData && Array.isArray(objectJson.userData.materialJson)) {
+                    console.log(` >> multiSubMaterial will be created from userData.materialJson based on materials: `, materialNames);
+                    await this._maxscriptClient.assignMultiSubMaterial(objectMaxName || meshName, materialNames, objectJson.userData.materialJson);
+                } else {
+                    if (objectJson.userData && objectJson.userData.materialJson) {
+                        // create array of N same materialJson
+                        let matJsonArray = material.map(() => { return objectJson.userData.materialJson; });
+                        console.log(` >> multiSubMaterial will be created from materials (one materialJson for all): `, materialNames);
+                        await this._maxscriptClient.assignMultiSubMaterial(objectMaxName || meshName, materialNames, matJsonArray);
+                    } else {
+                        console.log(` >> multiSubMaterial will be created from materials (no materialJson): `, materialNames);
+                        await this._maxscriptClient.assignMultiSubMaterial(objectMaxName || meshName, materialNames);
+                    }
+                }
             }
         }
 

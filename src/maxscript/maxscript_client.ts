@@ -502,7 +502,7 @@ fullpath = (dir + "\\" + filename)
     importMesh(path: string, nodeName: string): Promise<boolean> {
         console.log(" >> importing mesh from ", path);
         let maxscript = `threejsImportBufferGeometry \"${path}\" \"${nodeName}\" ;\r\n`
-                      + `$${nodeName}.wireColor = (color 255 255 255); \r\n`;
+            + `$${nodeName}.wireColor = (color 255 255 255); \r\n`;
 
         console.log(" >> maxscript: " + maxscript);
 
@@ -518,85 +518,94 @@ fullpath = (dir + "\\" + filename)
         return this.execMaxscript(maxscript, "exportMesh");
     }
 
+    __maxscriptMaterialFromMaterialJson(materialName: string, materialJson: any, targetVarName: string): string {
+        let scope = "__scope" + Math.floor(99999 * Math.random()) + "_";
+        let materialCopyName = this.getObjectName(materialJson);
+
+        const keys = Object.keys(materialJson.params);
+        for (let key of keys) {
+            const value = materialJson.params[key];
+            if (typeof value === "string") {
+                const maxscriptValue = value.replace(/\\/g, "\\\\");
+                materialJson.params[key] = maxscriptValue;
+            } else {
+                const maxscriptValue = value;
+                materialJson.params[key] = maxscriptValue;
+            }
+        }
+
+        delete materialJson["$"];
+
+        let maxscript = `${scope}mat = rayysFindMaterialByName "${materialName}"; \r\n`
+            + `${scope}matCopy = 0; \r\n`
+            + `if (${scope}mat != false) then ( \r\n`
+            + `  ${scope}matCopy = copy ${scope}mat; \r\n`
+            + `) else ( \r\n`
+            + `  ${scope}matCopy = VrayMtl(); \r\n`
+            + `) \r\n`
+            + `${scope}matCopy.name = "${materialCopyName}"; \r\n `;
+
+        for (let key in materialJson.params) {
+            const value = materialJson.params[key];
+
+            if (key.match(/texmap_\w+\.fileName$/g)) {
+                const subKey = key.replace(".fileName", "");
+                maxscript +=
+                    `if ${scope}matCopy.${subKey} == undefined then ( \r\n `
+                    + `  ${scope}matCopy.${subKey} = BitmapTexture(); \r\n `
+                    + `) \r\n `;
+            }
+
+            // is value direct file URL ?
+            if (typeof value === "string"
+                && (
+                    (value.toLowerCase().indexOf("http://") === 0
+                        || value.toLowerCase().indexOf("https://") === 0
+                    ) && (value.toLowerCase().endsWith(".png")
+                        || value.toLowerCase().endsWith(".jpg")
+                        || value.toLowerCase().endsWith(".jpeg")
+                        || value.toLowerCase().endsWith(".exr")
+                        || value.toLowerCase().endsWith(".hdr")
+                        || value.toLowerCase().endsWith(".psd")
+                        || value.toLowerCase().endsWith(".bmp")
+                        || value.toLowerCase().endsWith(".tga")
+                        || value.toLowerCase().endsWith(".tif")
+                        || value.toLowerCase().endsWith(".gif")
+                    )
+                )
+            ) {
+                const fileExt = value.split(".").pop();
+                const randomFilename = uuidv4() + "." + fileExt;
+                const curlPath = "C:\\\\bin\\\\curl";
+                const downloadUrl = `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/externalasset/${randomFilename}?api_key=${this._session.apiKey}&url=${value}`;
+                // for example:
+                // cmdexRun "C:\\bin\\curl -v -O \"https://api2.renderfarmjs.com/v1/externalasset/1.png?api_key=0dc0-4324-aacd&url=http://renderfarmjs.com/img/vray.png\" "
+
+                const downloadedMapPath = "C:\\\\Temp\\\\" + randomFilename;
+                maxscript += `res = cmdexRun "${curlPath} -k -s \\\"${downloadUrl}\\\" -o \\\"${downloadedMapPath}\\\" " ; \r\n`;
+                maxscript += `if res then (\r\n `
+                    + `  try ( \r\n `
+                    + `    ${scope}matCopy.${key} = \"${downloadedMapPath}\" ; \r\n `
+                    + `  ) \r\n `
+                    + `  catch ( false ) \r\n `
+                    + `) \r\n `;
+
+            } else {
+                maxscript += `  try ( ${scope}matCopy.${key} = ${value} ; ) catch ( false ) \r\n`;
+            }
+        }
+
+        maxscript += `${targetVarName} = ${scope}matCopy; \r\n`;
+        maxscript += `${scope}matCopy = 0; \r\n`;
+
+        return maxscript;
+    }
+
     assignMaterial(nodeName: string, materialName: string, materialJson?: any): Promise<boolean> {
         let maxscript = "";
         if (materialJson) { // material must be cloned and renamed (not reuse existing one)
-            let materialCopyName = this.getObjectName(materialJson);
-
-            const keys = Object.keys(materialJson.params);
-            for (let key of keys) {
-                const value = materialJson.params[key];
-                if (typeof value === "string") {
-                    const maxscriptValue = value.replace(/\\/g, "\\\\");
-                    materialJson.params[key] = maxscriptValue;
-                } else {
-                    const maxscriptValue = value;
-                    materialJson.params[key] = maxscriptValue;
-                }
-            }
-
-            delete materialJson["$"];
-
-            maxscript = `mat = rayysFindMaterialByName "${materialName}"; \r\n`
-                + `matCopy = 0; \r\n`
-                + `if (mat != false) then ( \r\n`
-                + `  matCopy = copy mat; \r\n`
-                + `) else ( \r\n`
-                + `  matCopy = VrayMtl(); \r\n`
-                + `) \r\n`
-                + `matCopy.name = "${materialCopyName}"; \r\n `;
-
-            for (let key in materialJson.params) {
-                const value = materialJson.params[key];
-
-                if (key.match(/texmap_\w+\.fileName$/g)) {
-                    const subKey = key.replace(".fileName", "");
-                    maxscript +=
-                        `if matCopy.${subKey} == undefined then ( \r\n `
-                        + `  matCopy.${subKey} = BitmapTexture(); \r\n `
-                        + `) \r\n `;
-                }
-
-                // is value direct file URL ?
-                if (typeof value === "string"
-                    && (
-                        (value.toLowerCase().indexOf("http://") === 0
-                            || value.toLowerCase().indexOf("https://") === 0
-                        ) && (value.toLowerCase().endsWith(".png")
-                            || value.toLowerCase().endsWith(".jpg")
-                            || value.toLowerCase().endsWith(".jpeg")
-                            || value.toLowerCase().endsWith(".exr")
-                            || value.toLowerCase().endsWith(".hdr")
-                            || value.toLowerCase().endsWith(".psd")
-                            || value.toLowerCase().endsWith(".bmp")
-                            || value.toLowerCase().endsWith(".tga")
-                            || value.toLowerCase().endsWith(".tif")
-                            || value.toLowerCase().endsWith(".gif")
-                        )
-                    )
-                ) {
-                    const fileExt = value.split(".").pop();
-                    const randomFilename = uuidv4() + "." + fileExt;
-                    const curlPath = "C:\\\\bin\\\\curl";
-                    const downloadUrl = `${this._settings.current.publicUrl}/v${this._settings.majorVersion}/externalasset/${randomFilename}?api_key=${this._session.apiKey}&url=${value}`;
-                    // for example:
-                    // cmdexRun "C:\\bin\\curl -v -O \"https://api2.renderfarmjs.com/v1/externalasset/1.png?api_key=0dc0-4324-aacd&url=http://renderfarmjs.com/img/vray.png\" "
-
-                    const downloadedMapPath = "C:\\\\Temp\\\\" + randomFilename;
-                    maxscript += `res = cmdexRun "${curlPath} -k -s \\\"${downloadUrl}\\\" -o \\\"${downloadedMapPath}\\\" " ; \r\n`;
-                    maxscript += `if res then (\r\n `
-                        + `  try ( \r\n `
-                        + `    matCopy.${key} = \"${downloadedMapPath}\" ; \r\n `
-                        + `  ) \r\n `
-                        + `  catch ( false ) \r\n `
-                        + `) \r\n `;
-
-                } else {
-                    maxscript += `  try ( matCopy.${key} = ${value} ; ) catch ( false ) \r\n`;
-                }
-            }
-
-            maxscript += `$${nodeName}.Material = matCopy; \r\n`;
+            maxscript += this.__maxscriptMaterialFromMaterialJson(materialJson.name || materialName, materialJson, "clonedMat");
+            maxscript += `$${nodeName}.Material = clonedMat; \r\n`;
         } else {
             maxscript = `mat = rayysFindMaterialByName "${materialName}"; `
                 + `if (mat != false) then (`
@@ -607,7 +616,7 @@ fullpath = (dir + "\\" + filename)
         return this.execMaxscript(maxscript, "assignMaterial");
     }
 
-    assignMultiSubMaterial(nodeName, materialNames): Promise<boolean> {
+    assignMultiSubMaterial(nodeName: string, materialNames: string[], materialJson?: any): Promise<boolean> {
 
         const numSubs = materialNames.length;
         if (numSubs === 0) {
@@ -628,11 +637,20 @@ fullpath = (dir + "\\" + filename)
             + `  mat = multiSubMaterial numsubs: ${numSubs} ;\n`
 
             + (materialNames.map((matName, matIdx) => {
-                return (
-                    `  submat = rayysFindMaterialByName "${matName}" ;\n`
-                    + `  if (submat != false) then (\n`
-                    + `    mat.materialList[${matIdx + 1}] = submat ;\n`
-                    + `  )\n`)
+                if (materialJson) {
+                    if (materialJson[matIdx]) {
+                        let matVarName = "subMat" + matIdx;
+                        let maxscript0 = `  ` + this.__maxscriptMaterialFromMaterialJson(materialJson[matIdx].name || matName, materialJson[matIdx], matVarName);
+                        maxscript0 += `  mat.materialList[${matIdx + 1}] = ${matVarName} ;\n`
+                        return maxscript0;
+                    }
+                } else {
+                    return (
+                        `  submat = rayysFindMaterialByName "${matName}" ;\n`
+                        + `  if (submat != false) then (\n`
+                        + `    mat.materialList[${matIdx + 1}] = submat ;\n`
+                        + `  )\n`)
+                }
             }) //== end of .map
                 .join("\n"))
 
