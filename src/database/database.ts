@@ -732,9 +732,9 @@ export class Database implements IDatabase {
             let db = this._client.db(this._settings.current.databaseName);
             assert.notEqual(db, null);
 
-            let opt: FindOneAndUpdateOption = { w: "majority", j: true, returnOriginal: false, upsert: false };
+            let opt: FindOneAndUpdateOption<T> = { w: "majority", j: true, returnOriginal: false, upsert: false };
 
-            let callback: MongoCallback<FindAndModifyWriteOpResultObject> = function (error: MongoError, res: FindAndModifyWriteOpResultObject) {
+            let callback: MongoCallback<FindAndModifyWriteOpResultObject<T>> = function (error: MongoError, res: FindAndModifyWriteOpResultObject<T>) {
                 if (res && res.ok === 1 && res.value) {
                     resolve(ctor ? ctor(res.value) : undefined);
                 } else if (error) {
@@ -768,7 +768,7 @@ export class Database implements IDatabase {
             assert.notEqual(db, null);
 
             let opt: CollectionInsertOneOptions = { w: "majority", j: true };
-            let callback: MongoCallback<InsertOneWriteOpResult> = function (error: MongoError, res: InsertOneWriteOpResult) {
+            let callback: MongoCallback<InsertOneWriteOpResult<any>> = function (error: MongoError, res: InsertOneWriteOpResult<any>) {
                 if (res && res.result.ok === 1 && res.insertedCount === 1) {
                     resolve(ctor ? ctor(res.ops[0]) : undefined);
                 } else if (error) {
@@ -949,7 +949,7 @@ export class Database implements IDatabase {
             let db = this._client.db(this._settings.current.databaseName);
             assert.notEqual(db, null);
 
-            let callback: MongoCallback<FindAndModifyWriteOpResultObject> = function (error: MongoError, res: FindAndModifyWriteOpResultObject) {
+            let callback: MongoCallback<FindAndModifyWriteOpResultObject<T>> = function (error: MongoError, res: FindAndModifyWriteOpResultObject<T>) {
                 if (res && res.ok === 1 && res.value) {
                     resolve(ctor ? ctor(res.value) : undefined);
                 } else if (error) {

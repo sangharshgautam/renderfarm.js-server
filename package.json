@@ -37,6 +37,7 @@
   },
   "scripts": {
     "build": "node ./node_modules/typescript/bin/tsc",
+    "run-dev": "npm run build && node ./dist/index.js",
     "dev": "npm run build && export NODE_ENV=dev && node ./dist/index.js",
     "dev2": "npm run build && export NODE_ENV=dev2 && node ./dist2/index.js",
     "test-spec": "tsc & jasmine --config=jasmine.spec.json",
